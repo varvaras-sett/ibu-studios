@@ -635,7 +635,7 @@ label { font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 
               <div class="spinner" style="width:24px;height:24px;border-width:2px;"></div> Loading bookings…
             </div>
 
-            <div id="admin-content" style="display:none;">
+            <div id="admin-bookings-content" style="display:none;">
               <div id="admin-bookings-list"></div>
             </div>
           </div>
@@ -798,7 +798,8 @@ async function loadUserAndRoute(user) {
   document.querySelectorAll('.nav-username').forEach(el => el.textContent = profile.full_name || 'User');
   if (state.role === 'staff') {
     showScreen('admin');
-    await loadAdminBookings();
+    loadAdminOverview();
+    loadAdminBookings();
   } else {
     showScreen('dashboard');
     await loadStudios();
@@ -1175,7 +1176,7 @@ function renderMyBookingRow(b) {
 // ──────────────────────────────────────────
 async function loadAdminBookings() {
   document.getElementById('admin-loading').style.display='flex';
-  document.getElementById('admin-content').style.display='none';
+  document.getElementById('admin-bookings-content').style.display='none';
   const statusFilter = state.adminTab==='pending' ? ['pending'] : ['pending','confirmed','cancelled'];
   const [{ data: studios }, { data: gear }] = await Promise.all([
     supabase.from('studio_bookings').select('*').in('status',statusFilter).order('created_at',{ascending:false}),
@@ -1208,7 +1209,7 @@ async function loadAdminBookings() {
   allItems.forEach(b => { window._adminBookings[b.id] = b; });
   renderAdminList(allItems);
   document.getElementById('admin-loading').style.display='none';
-  document.getElementById('admin-content').style.display='block';
+  document.getElementById('admin-bookings-content').style.display='block';
 }
 
 function renderAdminList(items) {
