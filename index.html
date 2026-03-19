@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IBU Creative Studios — Booking</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0e0e0e; --surface: #1a1a1a; --card: #222; --border: #2e2e2e;
+  --accent: #e8ff47; --accent2: #ff6b35; --text: #f0f0f0; --muted: #777;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+
+/* SCREEN SYSTEM */
+.screen { display: none; min-height: 100vh; flex-direction: column; }
+.screen.active { display: flex; }
+
+/* NAV */
+nav {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 32px; border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--bg); z-index: 100;
+}
+.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; }
+.logo span { color: var(--accent); }
+.nav-right { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; color: var(--muted); flex-wrap: wrap; }
+
+/* BADGES */
+.badge { font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.5px; }
+.badge.student { background: var(--accent); color: #000; }
+.badge.guest   { background: var(--accent2); color: #fff; }
+.badge.staff   { background: #7b5cff; color: #fff; }
+
+/* PAGE CONTENT */
+.page-content { flex: 1; padding: 48px 32px; max-width: 900px; margin: 0 auto; width: 100%; }
+
+/* HEADINGS */
+h1 { font-family: 'Syne', sans-serif; font-size: 2.8rem; font-weight: 800; line-height: 1.1; margin-bottom: 8px; }
+h2 { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 700; margin-bottom: 6px; }
+h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 600; }
+.subtitle { color: var(--muted); font-size: 1rem; margin-bottom: 40px; }
+
+/* BUTTONS */
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 8px; border: none; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+.btn-primary { background: var(--accent); color: #000; }
+.btn-primary:hover { background: #d4eb2e; transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+.btn-ghost { background: transparent; color: var(--muted); border: none; font-size: 0.85rem; padding: 8px 0; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+.btn-ghost:hover { color: var(--text); }
+.btn-danger { background: transparent; color: #ff4d4d; border: 1px solid #ff4d4d; padding: 10px 20px; font-size: 0.85rem; }
+.btn-danger:hover { background: rgba(255,77,77,0.1); }
+
+/* CARDS */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; transition: border-color 0.2s, transform 0.2s; }
+.card:hover { border-color: #444; }
+.card.clickable { cursor: pointer; }
+.card.clickable:hover { border-color: var(--accent); transform: translateY(-2px); }
+.card.selected { border-color: var(--accent); }
+
+/* GRID */
+.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+.grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; }
+
+/* PRICE */
+.price { font-size: 1.1rem; font-weight: 600; color: var(--accent2); margin-top: 8px; }
+.price.free { color: var(--muted); text-decoration: line-through; }
+.price-free-label { color: var(--accent); font-size: 0.8rem; font-weight: 600; margin-top: 2px; }
+
+/* BACK BUTTON */
+.back-btn { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 0.85rem; cursor: pointer; margin-bottom: 32px; background: none; border: none; font-family: 'DM Sans', sans-serif; }
+.back-btn:hover { color: var(--text); }
+
+/* TIME SLOTS */
+.slot { border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; cursor: pointer; transition: all 0.2s; text-align: center; }
+.slot:hover { border-color: var(--accent); }
+.slot.taken { opacity: 0.35; cursor: not-allowed; background: #1a1a1a; }
+.slot.taken:hover { border-color: var(--border); }
+.slot.selected { border-color: var(--accent); background: rgba(232,255,71,0.07); }
+.slot.past { opacity: 0.25; cursor: not-allowed; }
+.slot-label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; }
+.slot-time { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+.slot-tag { font-size: 0.65rem; color: #ff4d4d; text-transform: uppercase; margin-top: 4px; }
+
+/* STATUS */
+.status { display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.5px; }
+.status.pending   { background: rgba(255,107,53,0.15); color: var(--accent2); }
+.status.confirmed { background: rgba(232,255,71,0.12); color: var(--accent); }
+.status.cancelled { background: rgba(255,77,77,0.1); color: #ff4d4d; }
+
+/* CALENDAR */
+.calendar-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin-bottom: 24px; }
+.cal-day { text-align: center; padding: 8px 4px; border-radius: 6px; font-size: 0.82rem; cursor: pointer; }
+.cal-day.header { color: var(--muted); cursor: default; font-size: 0.72rem; text-transform: uppercase; }
+.cal-day.available:hover { background: rgba(232,255,71,0.1); }
+.cal-day.taken { color: #ff4d4d; text-decoration: line-through; cursor: not-allowed; }
+.cal-day.past { color: #444; cursor: not-allowed; }
+.cal-day.selected { background: var(--accent); color: #000; font-weight: 700; }
+.cal-day.empty { cursor: default; }
+
+/* BOOKING ROW */
+.booking-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); }
+.booking-row:last-child { border-bottom: none; }
+
+/* ICON BOX */
+.icon-box { width: 44px; height: 44px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 16px; }
+
+/* FORM */
+input[type="date"], input[type="text"], textarea, select {
+  background: var(--card); border: 1px solid var(--border); color: var(--text);
+  padding: 12px 16px; border-radius: 8px; font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem; width: 100%;
+}
+input[type="date"]:focus, input[type="text"]:focus { outline: none; border-color: var(--accent); }
+label { font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 6px; }
+.section-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 14px; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+/* GOOGLE BTN */
+.google-btn { display: flex; align-items: center; gap: 14px; background: #fff; color: #333; border: none; border-radius: 10px; padding: 16px 28px; font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.2s; width: 100%; max-width: 340px; font-family: 'DM Sans', sans-serif; }
+.google-btn:hover { background: #f5f5f5; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+.google-logo { width: 20px; height: 20px; }
+
+/* LOADING SPINNER */
+.spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ADMIN CARDS */
+.admin-booking-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin-bottom: 12px; }
+.admin-booking-card.pending-card { border-left: 3px solid var(--accent2); }
+.admin-top { display: flex; justify-content: space-between; align-items: flex-start; }
+
+/* TABS */
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.tab { padding: 10px 20px; font-size: 0.9rem; cursor: pointer; border: none; background: none; color: var(--muted); font-family: 'DM Sans', sans-serif; border-bottom: 2px solid transparent; transition: all 0.2s; }
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+
+/* CALENDAR NAV */
+.cal-nav { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.cal-nav-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
+.cal-nav-btn:hover { border-color: var(--accent); }
+
+/* STAT CARDS */
+.stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 32px; }
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+.stat-number { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: var(--accent); }
+.stat-label { font-size: 0.82rem; color: var(--muted); margin-top: 4px; }
+
+/* RESPONSIVE */
+@media (max-width: 640px) {
+  .grid-3, .stat-grid { grid-template-columns: 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+  h1 { font-size: 2rem; }
+  .page-content { padding: 32px 20px; }
+  nav { padding: 16px 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     LOADING SCREEN
+══════════════════════════════════════════ -->
+<div class="screen active" id="screen-loading">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:16px;">
+    <div class="logo" style="font-size:1.5rem;">STUDIO<span>.</span></div>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     LOGIN
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-login">
+  <nav><div class="logo">STUDIO<span>.</span></div></nav>
+  <div class="page-content" style="display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;flex:1;">
+    <p class="section-label" style="margin-bottom:20px;">IBU On-Campus Studio Booking</p>
+    <h1 style="max-width:500px;margin-bottom:16px;">Book your creative space.</h1>
+    <p style="color:var(--muted);margin-bottom:48px;max-width:380px;">Sign in with your IBU Google account to unlock free studio access. External guests can still book at standard rates.</p>
+
+    <button class="google-btn" onclick="signInWithGoogle()">
+      <svg class="google-logo" viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+      </svg>
+      Continue with Google
+    </button>
+
+    <div style="margin-top:48px;display:flex;gap:24px;flex-wrap:wrap;justify-content:center;">
+      <div class="card" style="max-width:200px;">
+        <div style="font-size:1.2rem;margin-bottom:8px;">🎓</div>
+        <div style="font-size:0.85rem;font-weight:600;margin-bottom:4px;">Student Access</div>
+        <div style="font-size:0.78rem;color:var(--muted);">Sign in with @stu.ibu.edu.ba — all bookings are free.</div>
+      </div>
+      <div class="card" style="max-width:200px;">
+        <div style="font-size:1.2rem;margin-bottom:8px;">🌐</div>
+        <div style="font-size:0.85rem;font-weight:600;margin-bottom:4px;">Guest Access</div>
+        <div style="font-size:0.78rem;color:var(--muted);">Anyone can book — standard rates apply per session.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     DASHBOARD (Student / Guest)
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-dashboard">
+  <nav>
+    <div class="logo">STUDIO<span>.</span></div>
+    <div class="nav-right">
+      <span class="nav-username" style="color:var(--muted);font-size:0.85rem;"></span>
+      <span class="nav-badge badge student"></span>
+      <button class="btn-ghost" onclick="loadMyBookings()">My Bookings</button>
+      <button class="btn-ghost" onclick="signOut()" style="color:#ff4d4d;">Sign Out</button>
+    </div>
+  </nav>
+  <div class="page-content">
+    <p class="section-label">What would you like to do?</p>
+    <h1 style="margin-bottom:6px;">Book a studio.<br/>Reserve gear.</h1>
+    <p class="subtitle">Choose an option below to get started.</p>
+    <div class="grid-3">
+      <div class="card clickable" onclick="showScreen('studio-select')">
+        <div class="icon-box">🎬</div>
+        <h3>Studio Reservations</h3>
+        <p style="color:var(--muted);font-size:0.85rem;margin-top:8px;">Book the Video, Photo, or Production studio for a time slot.</p>
+        <p style="margin-top:16px;font-size:0.78rem;color:var(--accent);">→ 3 studios available</p>
+      </div>
+      <div class="card clickable" onclick="showScreen('kits-select')">
+        <div class="icon-box">🎒</div>
+        <h3>Kits &amp; Bundle Gear</h3>
+        <p style="color:var(--muted);font-size:0.85rem;margin-top:8px;">Reserve a studio's complete gear bundle to take out.</p>
+        <p style="margin-top:16px;font-size:0.78rem;color:var(--accent);">→ 3 bundle kits available</p>
+      </div>
+      <div class="card clickable" onclick="goToIndividualGear()">
+        <div class="icon-box">🎙</div>
+        <h3>Individual Gear</h3>
+        <p style="color:var(--muted);font-size:0.85rem;margin-top:8px;">Pick a single mic, light, or piece of equipment from any studio.</p>
+        <p style="margin-top:16px;font-size:0.78rem;color:var(--accent);">→ Browse all items</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     STUDIO SELECT
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-studio-select">
+  <nav>
+    <div class="logo">STUDIO<span>.</span></div>
+    <div class="nav-right"><span class="nav-badge badge student"></span></div>
+  </nav>
+  <div class="page-content">
+    <button class="back-btn" onclick="showScreen('dashboard')">← Back</button>
+    <p class="section-label">Studio Reservations</p>
+    <h2 style="margin-bottom:4px;">Select a studio</h2>
+    <p class="subtitle">Each studio comes fully equipped. Slots are 5-hour blocks.</p>
+    <div class="grid-3" id="studio-cards">
+      <div style="color:var(--muted);font-size:0.85rem;">Loading studios…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     STUDIO CALENDAR
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-studio-calendar">
+  <nav>
+    <div class="logo">STUDIO<span>.</span></div>
+    <div class="nav-right"><span class="nav-badge badge student"></span></div>
+  </nav>
+  <div class="page-content">
+    <button class="back-btn" onclick="showScreen('studio-select')">← Back</button>
+    <p class="section-label" id="cal-studio-label">Studio</p>
+    <h2 style="margin-bottom:20px;">Pick a date &amp; time slot</h2>
+
+    <div class="cal-nav">
+      <button class="cal-nav-btn" onclick="prevMonth()">‹</button>
+      <span id="cal-month-label" style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem;"></span>
+      <button class="cal-nav-btn" onclick="nextMonth()">›</button>
+    </div>
+
+    <div class="calendar-grid" id="calendar-grid"></div>
+
+    <p style="font-size:0.78rem;color:var(--muted);margin-bottom:28px;">
+      <span style="color:#ff4d4d;">—</span> Crossed out dates are fully booked
+    </p>
+
+    <p class="section-label">Available time slots</p>
+    <div id="time-slots" style="margin-bottom:32px;"></div>
+
+    <button id="review-btn" class="btn btn-primary" onclick="goToStudioConfirm()" disabled>Review Booking →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     STUDIO CONFIRM
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-studio-confirm">
+  <nav><div class="logo">STUDIO<span>.</span></div></nav>
+  <div class="page-content">
+    <button class="back-btn" onclick="showScreen('studio-calendar')">← Back</button>
+    <p class="section-label">Booking Summary</p>
+    <h2 style="margin-bottom:24px;">Review &amp; confirm</h2>
+
+    <div class="card" style="margin-bottom:24px;">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Studio</span><span id="confirm-studio-name"></span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Date</span><span id="confirm-date"></span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Time Slot</span><span id="confirm-slot"></span></div>
+        <hr style="border-color:var(--border);" />
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="color:var(--muted);">Cost</span>
+          <div style="text-align:right;">
+            <div id="confirm-price" style="color:var(--accent2);font-weight:600;"></div>
+            <div id="confirm-free" style="color:var(--accent);font-size:0.8rem;display:none;">FREE — Student booking</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p style="color:var(--muted);font-size:0.85rem;margin-bottom:24px;">Your booking will be submitted for staff approval. You'll receive an email once confirmed.</p>
+    <div style="display:flex;gap:12px;">
+      <button id="submit-booking-btn" class="btn btn-primary" onclick="submitStudioBooking()">Submit Booking</button>
+      <button class="btn btn-outline" onclick="showScreen('studio-calendar')">Go Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SUCCESS
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-success">
+  <nav><div class="logo">STUDIO<span>.</span></div></nav>
+  <div class="page-content" style="display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;flex:1;">
+    <div style="font-size:4rem;margin-bottom:16px;">✅</div>
+    <h2 style="margin-bottom:8px;">Booking Submitted!</h2>
+    <p style="color:var(--muted);max-width:360px;margin-bottom:12px;">Your request is pending staff approval. We'll send a confirmation to your email once it's approved.</p>
+    <p id="success-details" style="font-size:0.82rem;color:var(--muted);margin-bottom:40px;"></p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+      <button class="btn btn-primary" onclick="loadMyBookings()">View My Bookings</button>
+      <button class="btn btn-outline" onclick="showScreen('dashboard')">Back to Dashboard</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     KITS SELECT
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-kits-select">
+  <nav><div class="logo">STUDIO<span>.</span></div></nav>
+  <div class="page-content">
+    <button class="back-btn" onclick="showScreen('dashboard')">← Back</button>
+    <p class="section-label">Kits &amp; Bundle Gear</p>
+    <h2 style="margin-bottom:4px;">Select a studio</h2>
+    <p class="subtitle">Each studio has its own bundle kit(s). Pick up in person.</p>
+    <div class="grid-3">
+      <div class="card clickable" onclick="goToVideoKits()">
+        <div class="icon-box">📹</div><h3>Video Studio</h3>
+        <p style="color:var(--muted);font-size:0.82rem;margin-top:8px;">3 bundle sizes — Small, Medium &amp; Large.</p>
+        <p style="margin-top:16px;font-size:0.78rem;color:var(--accent);">→ S / M / L bundles</p>
+      </div>
+      <div class="card clickable" onclick="goToPhotoKit()">
+        <div class="icon-box">📷</div><h3>Photo Studio</h3>
+        <p style="color:var(--muted);font-size:0.82rem;margin-top:8px;">One complete photography bundle.</p>
+        <p style="margin-top:16px;font-size:0.78rem;color:var(--accent);">→ 1 bundle available</p>
+      </div>
+      <div class="card clickable" onclick="goToProductionKit()">
+        <div class="icon-box">🎚</div><h3>Production Studio</h3>
+        <p style="color:var(--muted);font-size:0.82rem;margin-top:8px;">One complete audio/production bundle.</p>
+        <p style="margin-top:16px;font-size:0.78rem;color:var(--accent);">→ 1 bundle available</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     VIDEO KITS
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-kits-video">
+  <nav><div class="logo">STUDIO<span>.</span></div></nav>
+  <div class="page-content">
+    <button class="back-btn" onclick="showScreen('kits-select')">← Back</button>
+    <p class="section-label">Kits → Video Studio</p>
+    <h2 style="margin-bottom:4px;">Choose your bundle size</h2>
+    <p class="subtitle">Pick the kit that matches your shoot scale.</p>
+    <div id="kits-video-container" style="display:flex;flex-direction:column;gap:16px;">
+      <div style="color:var(--muted);">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PHOTO KIT
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-kits-photo">
+  <nav><div class="logo">STUDIO<span>.</span></div></nav>
+  <div class="page-content">
+    <button class="back-btn" onclick="showScreen('kits-select')">← Back</button>
+    <p class="section-label">Kits → Photo Studio</p>
+    <h2 style="margin-bottom:4px;">Photo Bundle</h2>
+    <p class="subtitle">One complete photography kit available for reservation.</p>
+    <div id="kits-photo-container" style="display:flex;flex-direction:column;gap:16px;">
+      <div style="color:var(--muted);">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PRODUCTION KIT
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-kits-production">
+  <nav><div class="logo">STUDIO<span>.</span></div></nav>
+  <div class="page-content">
+    <button class="back-btn" onclick="showScreen('kits-select')">← Back</button>
+    <p class="section-label">Kits → Production Studio</p>
+    <h2 style="margin-bottom:4px;">Production Bundle</h2>
+    <p class="subtitle">One complete audio &amp; production kit available for reservation.</p>
+    <div id="kits-production-container" style="display:flex;flex-direction:column;gap:16px;">
+      <div style="color:var(--muted);">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     INDIVIDUAL GEAR
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-individual-select">
+  <nav><div class="logo">STUDIO<span>.</span></div></nav>
+  <div class="page-content">
+    <button class="back-btn" onclick="showScreen('dashboard')">← Back</button>
+    <p class="section-label">Individual Gear</p>
+    <h2 style="margin-bottom:4px;">Browse items by studio</h2>
+    <p class="subtitle">Pick a single piece of equipment. Pick up in person.</p>
+    <div id="individual-gear-container">
+      <div style="color:var(--muted);">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     GEAR DATES
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-gear-dates">
+  <nav><div class="logo">STUDIO<span>.</span></div></nav>
+  <div class="page-content">
+    <button class="back-btn" id="gear-back-btn" onclick="showScreen('individual-select')">← Back</button>
+    <p class="section-label">Gear Reservation</p>
+    <h2 style="margin-bottom:4px;">Select dates</h2>
+    <p class="subtitle">Choose when you'll pick up and return the gear.</p>
+
+    <div style="margin-bottom:16px;">
+      <p style="font-weight:600;margin-bottom:4px;" id="gear-item-name"></p>
+      <p style="color:var(--muted);font-size:0.85rem;" id="gear-item-desc"></p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:480px;margin-bottom:32px;">
+      <div>
+        <label>Checkout Date</label>
+        <input type="date" id="checkout-date" oninput="updateGearPriceSummary()" />
+      </div>
+      <div>
+        <label>Return Date</label>
+        <input type="date" id="return-date" oninput="updateGearPriceSummary()" />
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:24px;max-width:480px;">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Item</span><span id="gear-item-name-summary"></span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Duration</span><span id="gear-days">—</span></div>
+        <hr style="border-color:var(--border);" />
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="color:var(--muted);">Cost</span>
+          <div style="text-align:right;">
+            <div id="gear-total-price" style="color:var(--accent2);font-weight:600;"></div>
+            <div id="gear-free" style="color:var(--accent);font-size:0.8rem;display:none;">FREE — Student booking</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p style="color:var(--muted);font-size:0.85rem;margin-bottom:24px;">Pickup and return handled in person at the studio desk. Staff approval required before pickup.</p>
+    <button id="submit-gear-btn" class="btn btn-primary" onclick="submitGearReservation()">Submit Request</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MY BOOKINGS
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-mybookings">
+  <nav>
+    <div class="logo">STUDIO<span>.</span></div>
+    <div class="nav-right">
+      <button class="btn btn-outline" onclick="showScreen('dashboard')" style="padding:8px 16px;font-size:0.85rem;">+ New Booking</button>
+    </div>
+  </nav>
+  <div class="page-content">
+    <p class="section-label">Account</p>
+    <h2 style="margin-bottom:32px;">My Bookings</h2>
+
+    <div id="bookings-loading" style="display:flex;align-items:center;gap:12px;color:var(--muted);">
+      <div class="spinner" style="width:24px;height:24px;border-width:2px;"></div> Loading your bookings…
+    </div>
+
+    <div id="bookings-content" style="display:none;">
+      <p class="section-label">Pending Approval</p>
+      <div class="card" style="margin-bottom:24px;" id="pending-bookings"></div>
+
+      <p class="section-label">Booking History</p>
+      <div class="card" id="history-bookings"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     ADMIN PANEL
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-admin">
+  <nav>
+    <div class="logo">STUDIO<span>.</span></div>
+    <div class="nav-right">
+      <span class="nav-username" style="color:var(--muted);font-size:0.85rem;"></span>
+      <span class="badge staff">Staff</span>
+      <button class="btn-ghost" onclick="signOut()" style="color:#ff4d4d;">Sign Out</button>
+    </div>
+  </nav>
+  <div class="page-content">
+    <p class="section-label">Admin</p>
+    <h2 style="margin-bottom:8px;">Booking Requests</h2>
+    <p style="color:var(--muted);font-size:0.9rem;margin-bottom:28px;">Review and approve or reject studio &amp; gear requests.</p>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-number" id="admin-pending-count">—</div>
+        <div class="stat-label">Pending Approval</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="admin-confirmed-count">—</div>
+        <div class="stat-label">Confirmed This Month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="admin-total-count">—</div>
+        <div class="stat-label">Total Bookings</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" id="tab-pending" onclick="setAdminTab('pending')">⏳ Pending</button>
+      <button class="tab" id="tab-all" onclick="setAdminTab('all')">📋 All Bookings</button>
+    </div>
+
+    <div id="admin-loading" style="display:flex;align-items:center;gap:12px;color:var(--muted);">
+      <div class="spinner" style="width:24px;height:24px;border-width:2px;"></div> Loading bookings…
+    </div>
+
+    <div id="admin-content" style="display:none;">
+      <div id="admin-bookings-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════ -->
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+// ═══════════════════════════════════════════════════
+// ⚙️  CONFIGURATION — Fill in your values below
+//     (Step 4 of the deployment guide)
+// ═══════════════════════════════════════════════════
+const SUPABASE_URL  = 'YOUR_SUPABASE_URL';   // e.g. https://xyzabc.supabase.co
+const SUPABASE_KEY  = 'YOUR_SUPABASE_ANON_KEY'; // starts with eyJ...
+
+// These match your school domains — only change if they change
+const STUDENT_DOMAIN = 'stu.ibu.edu.ba';
+const STAFF_DOMAIN   = 'ibu.edu.ba';
+const STUDIO_LOCATION = 'IBU Creative Studios, International Burch University, Sarajevo';
+// ═══════════════════════════════════════════════════
+
+const SLOTS = {
+  T1: { label: 'T1', time: '8:00 AM – 1:00 PM',  start: '080000', end: '130000' },
+  T2: { label: 'T2', time: '1:00 PM – 6:00 PM',  start: '130000', end: '180000' },
+  T3: { label: 'T3', time: '6:00 PM – 11:00 PM', start: '180000', end: '230000' },
+};
+
+let supabase;
+const state = {
+  user: null, profile: null, role: null,
+  studios: [], gearKits: {}, individualGear: {},
+  adminTab: 'pending',
+  booking: {
+    type: null, studio: null, kit: null, gear: null,
+    date: null, slot: null,
+    checkoutDate: null, returnDate: null
+  },
+  calYear: new Date().getFullYear(),
+  calMonth: new Date().getMonth(),
+  availability: {}
+};
+
+// ──────────────────────────────────────────
+// INIT
+// ──────────────────────────────────────────
+async function init() {
+  if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
+    document.body.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:'DM Sans',sans-serif;background:#0e0e0e;color:#f0f0f0;text-align:center;padding:32px;">
+        <div style="font-size:3rem;margin-bottom:16px;">⚙️</div>
+        <h2 style="font-family:'Syne',sans-serif;font-size:1.8rem;margin-bottom:12px;">Setup Required</h2>
+        <p style="color:#777;max-width:460px;line-height:1.6;">Open <strong style="color:#f0f0f0;">index.html</strong> in a text editor, scroll to the bottom script section, and replace <code style="color:#e8ff47;">YOUR_SUPABASE_URL</code> and <code style="color:#e8ff47;">YOUR_SUPABASE_ANON_KEY</code> with your Supabase project values.<br/><br/>Follow the deployment guide for step-by-step instructions.</p>
+      </div>`;
+    return;
+  }
+
+  supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    await loadUserAndRoute(session.user);
+  } else {
+    showScreen('login');
+  }
+
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      await loadUserAndRoute(session.user);
+    } else if (event === 'SIGNED_OUT') {
+      Object.assign(state, { user: null, profile: null, role: null });
+      showScreen('login');
+    }
+  });
+}
+
+// ──────────────────────────────────────────
+// AUTH
+// ──────────────────────────────────────────
+async function signInWithGoogle() {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin }
+  });
+  if (error) alert('Sign-in error: ' + error.message);
+}
+
+async function signOut() {
+  await supabase.auth.signOut();
+}
+
+async function loadUserAndRoute(user) {
+  showScreen('loading');
+  const { data: profile } = await supabase
+    .from('profiles').select('*').eq('id', user.id).single();
+
+  state.user = user;
+  state.profile = profile;
+  state.role = profile?.role || detectRole(user.email);
+
+  updateNav();
+  await loadStudios();
+
+  if (state.role === 'staff') {
+    showScreen('admin');
+    await loadAdminBookings();
+  } else {
+    showScreen('dashboard');
+  }
+}
+
+function detectRole(email) {
+  if (email.endsWith('@' + STUDENT_DOMAIN)) return 'student';
+  if (email.endsWith('@' + STAFF_DOMAIN))   return 'staff';
+  return 'guest';
+}
+
+// ──────────────────────────────────────────
+// NAVIGATION
+// ──────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('screen-' + id);
+  if (el) { el.classList.add('active'); window.scrollTo(0, 0); }
+}
+
+function updateNav() {
+  const name = state.profile?.full_name || state.user?.email?.split('@')[0] || '';
+  const role = state.role;
+  document.querySelectorAll('.nav-username').forEach(el => el.textContent = name);
+  document.querySelectorAll('.nav-badge').forEach(el => {
+    el.textContent = role === 'student' ? 'Student' : role === 'staff' ? 'Staff' : 'Guest';
+    el.className = 'badge ' + (role === 'student' ? 'student' : role === 'staff' ? 'staff' : 'guest');
+  });
+}
+
+// ──────────────────────────────────────────
+// DATA — Studios
+// ──────────────────────────────────────────
+async function loadStudios() {
+  if (state.studios.length > 0) return;
+  const { data } = await supabase.from('studios').select('*');
+  state.studios = data || [];
+  renderStudioCards();
+}
+
+function renderStudioCards() {
+  const container = document.getElementById('studio-cards');
+  if (!container) return;
+  const isFree = state.role === 'student';
+  container.innerHTML = state.studios.map(s => `
+    <div class="card clickable" onclick="openCalendar('${s.id}')">
+      <div class="icon-box">${s.emoji}</div>
+      <h3>${s.name}</h3>
+      <p style="color:var(--muted);font-size:0.82rem;margin-top:8px;">${s.description}</p>
+      <div class="price ${isFree ? 'free' : ''}">${isFree ? 'FREE' : '$' + s.guest_price_per_slot + ' / slot'}</div>
+      ${isFree ? '<div class="price-free-label">FREE for students</div>' : ''}
+    </div>`).join('');
+}
+
+// ──────────────────────────────────────────
+// CALENDAR & AVAILABILITY
+// ──────────────────────────────────────────
+async function openCalendar(studioId) {
+  state.booking.studio = state.studios.find(s => s.id === studioId);
+  state.booking.type = 'studio';
+  state.booking.date = null;
+  state.booking.slot = null;
+  state.calYear  = new Date().getFullYear();
+  state.calMonth = new Date().getMonth();
+  document.getElementById('cal-studio-label').textContent = state.booking.studio?.name + ' — Pick a date';
+  showScreen('studio-calendar');
+  await renderCalendar();
+}
+
+async function renderCalendar() {
+  const { calYear: year, calMonth: month } = state;
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-month-label').textContent = `${monthNames[month]} ${year}`;
+
+  const pad = n => String(n).padStart(2, '0');
+  const startDate = `${year}-${pad(month+1)}-01`;
+  const lastDay   = new Date(year, month+1, 0).getDate();
+  const endDate   = `${year}-${pad(month+1)}-${lastDay}`;
+
+  const { data: bookings } = await supabase
+    .from('studio_bookings')
+    .select('booking_date, time_slot')
+    .eq('studio_id', state.booking.studio.id)
+    .in('status', ['pending','confirmed'])
+    .gte('booking_date', startDate)
+    .lte('booking_date', endDate);
+
+  // Build taken map
+  const taken = {};
+  (bookings || []).forEach(b => {
+    if (!taken[b.booking_date]) taken[b.booking_date] = {};
+    taken[b.booking_date][b.time_slot] = (taken[b.booking_date][b.time_slot] || 0) + 1;
+  });
+  state.availability = taken;
+
+  const maxSim  = state.booking.studio?.max_simultaneous || 1;
+  const firstDayOfWeek = new Date(year, month, 1).getDay();
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  let html = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+    .map(d => `<div class="cal-day header">${d}</div>`).join('');
+
+  for (let i = 0; i < firstDayOfWeek; i++) html += '<div class="cal-day empty"></div>';
+
+  for (let d = 1; d <= lastDay; d++) {
+    const dateStr = `${year}-${pad(month+1)}-${pad(d)}`;
+    const dayDate = new Date(year, month, d);
+    const isPast  = dayDate < today;
+    const daySlots = taken[dateStr] || {};
+    const allFull  = ['T1','T2','T3'].every(s => (daySlots[s]||0) >= maxSim);
+    const isSelected = state.booking.date === dateStr;
+
+    let cls = 'cal-day';
+    if (isPast)     cls += ' past';
+    else if (allFull) cls += ' taken';
+    else            cls += ' available';
+    if (isSelected) cls += ' selected';
+
+    if (isPast || allFull) {
+      html += `<div class="${cls}">${d}</div>`;
+    } else {
+      html += `<div class="${cls}" onclick="selectDay('${dateStr}',this)">${d}</div>`;
+    }
+  }
+
+  document.getElementById('calendar-grid').innerHTML = html;
+  renderTimeSlots();
+}
+
+function selectDay(dateStr, el) {
+  document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('selected'));
+  el.classList.add('selected');
+  state.booking.date = dateStr;
+  state.booking.slot = null;
+  renderTimeSlots();
+}
+
+function renderTimeSlots() {
+  const container = document.getElementById('time-slots');
+  const reviewBtn = document.getElementById('review-btn');
+  if (!state.booking.date) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:0.85rem;">Select a date above to see available time slots.</p>';
+    reviewBtn.disabled = true;
+    return;
+  }
+  const maxSim  = state.booking.studio?.max_simultaneous || 1;
+  const daySlots = state.availability[state.booking.date] || {};
+  let html = '<div class="grid-3">';
+  ['T1','T2','T3'].forEach(slot => {
+    const count = daySlots[slot] || 0;
+    const isFull = count >= maxSim;
+    const isSel  = state.booking.slot === slot;
+    let cls = 'slot' + (isFull ? ' taken' : isSel ? ' selected' : '');
+    html += isFull
+      ? `<div class="${cls}"><div class="slot-label">${SLOTS[slot].label}</div><div class="slot-time">${SLOTS[slot].time}</div><div class="slot-tag">Taken</div></div>`
+      : `<div class="${cls}" onclick="selectSlot('${slot}',this)"><div class="slot-label">${SLOTS[slot].label}</div><div class="slot-time">${SLOTS[slot].time}</div></div>`;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+  reviewBtn.disabled = !state.booking.slot;
+}
+
+function selectSlot(slot, el) {
+  document.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
+  el.classList.add('selected');
+  state.booking.slot = slot;
+  document.getElementById('review-btn').disabled = false;
+}
+
+function prevMonth() {
+  state.calMonth--;
+  if (state.calMonth < 0) { state.calMonth = 11; state.calYear--; }
+  state.booking.date = null; state.booking.slot = null;
+  renderCalendar();
+}
+
+function nextMonth() {
+  state.calMonth++;
+  if (state.calMonth > 11) { state.calMonth = 0; state.calYear++; }
+  state.booking.date = null; state.booking.slot = null;
+  renderCalendar();
+}
+
+// ──────────────────────────────────────────
+// STUDIO BOOKING
+// ──────────────────────────────────────────
+function goToStudioConfirm() {
+  if (!state.booking.date || !state.booking.slot) { alert('Please select a date and time slot.'); return; }
+  const isFree = state.role === 'student';
+  const price  = state.booking.studio?.guest_price_per_slot || 0;
+  document.getElementById('confirm-studio-name').textContent = state.booking.studio?.name;
+  document.getElementById('confirm-date').textContent = formatDate(state.booking.date);
+  document.getElementById('confirm-slot').textContent = `${state.booking.slot} — ${SLOTS[state.booking.slot].time}`;
+  const priceEl = document.getElementById('confirm-price');
+  const freeEl  = document.getElementById('confirm-free');
+  if (isFree) { priceEl.style.display='none'; freeEl.style.display='block'; }
+  else { priceEl.textContent='$'+parseFloat(price).toFixed(2); priceEl.style.display='block'; freeEl.style.display='none'; }
+  showScreen('studio-confirm');
+}
+
+async function submitStudioBooking() {
+  const btn = document.getElementById('submit-booking-btn');
+  btn.disabled = true; btn.textContent = 'Submitting…';
+  const { data, error } = await supabase.from('studio_bookings').insert({
+    user_id: state.user.id,
+    studio_id: state.booking.studio.id,
+    studio_name: state.booking.studio.name,
+    booking_date: state.booking.date,
+    time_slot: state.booking.slot,
+    user_name: state.profile?.full_name || state.user.email.split('@')[0],
+    user_email: state.user.email,
+    is_student: state.role === 'student',
+  }).select().single();
+  if (error) { alert('Error: ' + error.message); btn.disabled=false; btn.textContent='Submit Booking'; return; }
+  document.getElementById('success-details').textContent =
+    `${data.studio_name} · ${data.time_slot} · ${formatDate(data.booking_date)}`;
+  showScreen('success');
+}
+
+// ──────────────────────────────────────────
+// GEAR KITS
+// ──────────────────────────────────────────
+async function loadGearKits(type) {
+  if (state.gearKits[type]) return;
+  const { data } = await supabase.from('gear_kits').select('*').eq('studio_type', type).order('sort_order');
+  state.gearKits[type] = data || [];
+}
+
+async function goToVideoKits() {
+  await loadGearKits('video');
+  renderKitCards('video', 'kits-video-container');
+  showScreen('kits-video');
+}
+
+async function goToPhotoKit() {
+  await loadGearKits('photo');
+  renderKitCards('photo', 'kits-photo-container');
+  showScreen('kits-photo');
+}
+
+async function goToProductionKit() {
+  await loadGearKits('production');
+  renderKitCards('production', 'kits-production-container');
+  showScreen('kits-production');
+}
+
+function renderKitCards(type, containerId) {
+  const kits = state.gearKits[type] || [];
+  const isFree = state.role === 'student';
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = kits.map(kit => {
+    const hasBadge = !!kit.badge;
+    return `
+    <div class="card clickable" onclick='selectKit(${JSON.stringify(kit)})' style="display:flex;justify-content:space-between;align-items:flex-start;${hasBadge?'border-color:#444;':''}">
+      <div style="flex:1;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <div style="background:${hasBadge?'rgba(232,255,71,0.12);border:1px solid var(--accent);color:var(--accent);':'var(--border);'}border-radius:6px;padding:4px 12px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.85rem;letter-spacing:1px;">${kit.size}</div>
+          <h3>${kit.name}</h3>
+          ${hasBadge?`<span style="font-size:0.68rem;background:rgba(232,255,71,0.1);color:var(--accent);border-radius:100px;padding:2px 8px;font-weight:600;">${kit.badge}</span>`:''}
+        </div>
+        <p style="color:var(--muted);font-size:0.82rem;line-height:1.5;">${kit.items_description}</p>
+        <p style="color:var(--muted);font-size:0.78rem;margin-top:6px;">Best for: ${kit.best_for}</p>
+      </div>
+      <div style="text-align:right;margin-left:20px;flex-shrink:0;">
+        <div class="price ${isFree?'free':''}">${isFree?'FREE':'$'+kit.guest_price_per_day+'/day'}</div>
+        ${isFree?'<div class="price-free-label">FREE for students</div>':''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectKit(kit) {
+  state.booking.type = 'kit';
+  state.booking.kit  = kit;
+  state.booking.gear = null;
+  openGearDates(kit);
+}
+
+// ──────────────────────────────────────────
+// INDIVIDUAL GEAR
+// ──────────────────────────────────────────
+async function goToIndividualGear() {
+  if (Object.keys(state.individualGear).length === 0) {
+    const { data } = await supabase.from('individual_gear').select('*').order('studio_type');
+    state.individualGear = {};
+    (data||[]).forEach(item => {
+      if (!state.individualGear[item.studio_type]) state.individualGear[item.studio_type] = [];
+      state.individualGear[item.studio_type].push(item);
+    });
+  }
+  renderIndividualGear();
+  showScreen('individual-select');
+}
+
+function renderIndividualGear() {
+  const isFree = state.role === 'student';
+  const labels = { video:'Video Studio Items', photo:'Photo Studio Items', production:'Production Studio Items' };
+  let html = '';
+  ['video','photo','production'].forEach(type => {
+    const items = state.individualGear[type] || [];
+    if (!items.length) return;
+    html += `<div style="margin-bottom:28px;"><p class="section-label">${labels[type]}</p><div class="grid-2">`;
+    items.forEach(item => {
+      html += `
+      <div class="card clickable" onclick='selectGear(${JSON.stringify(item)})'>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <h3 style="font-size:0.95rem;">${item.name}</h3>
+            <p style="color:var(--muted);font-size:0.8rem;margin-top:4px;">${item.description}</p>
+          </div>
+          <div style="text-align:right;flex-shrink:0;margin-left:12px;">
+            <div class="price ${isFree?'free':''}" style="font-size:0.9rem;">${isFree?'FREE':'$'+item.guest_price_per_day+'/day'}</div>
+            ${isFree?'<div class="price-free-label">FREE</div>':''}
+          </div>
+        </div>
+      </div>`;
+    });
+    html += '</div></div>';
+  });
+  document.getElementById('individual-gear-container').innerHTML = html;
+}
+
+function selectGear(gear) {
+  state.booking.type = 'gear';
+  state.booking.gear = gear;
+  state.booking.kit  = null;
+  openGearDates(gear);
+}
+
+// ──────────────────────────────────────────
+// GEAR DATES
+// ──────────────────────────────────────────
+function openGearDates(item) {
+  document.getElementById('gear-item-name').textContent = item.name;
+  document.getElementById('gear-item-name-summary').textContent = item.name;
+  document.getElementById('gear-item-desc').textContent = item.items_description || item.description || '';
+  const today = new Date().toISOString().split('T')[0];
+  const tomorrow = new Date(Date.now()+86400000).toISOString().split('T')[0];
+  document.getElementById('checkout-date').value = today;
+  document.getElementById('return-date').value   = tomorrow;
+  // Set back button based on type
+  const backBtn = document.getElementById('gear-back-btn');
+  if (state.booking.type === 'gear') backBtn.onclick = () => showScreen('individual-select');
+  else if (state.booking.kit?.studio_type === 'video') backBtn.onclick = () => showScreen('kits-video');
+  else if (state.booking.kit?.studio_type === 'photo') backBtn.onclick = () => showScreen('kits-photo');
+  else backBtn.onclick = () => showScreen('kits-production');
+  updateGearPriceSummary();
+  showScreen('gear-dates');
+}
+
+function updateGearPriceSummary() {
+  const checkout = document.getElementById('checkout-date')?.value;
+  const returnD  = document.getElementById('return-date')?.value;
+  if (!checkout || !returnD) return;
+  const days = Math.max(1, Math.ceil((new Date(returnD)-new Date(checkout))/86400000));
+  const item = state.booking.kit || state.booking.gear;
+  const price = item?.guest_price_per_day || 0;
+  const total = price * days;
+  const isFree = state.role === 'student';
+  document.getElementById('gear-days').textContent = days + (days===1?' day':' days');
+  const priceEl = document.getElementById('gear-total-price');
+  const freeEl  = document.getElementById('gear-free');
+  if (isFree) { priceEl.style.display='none'; freeEl.style.display='block'; }
+  else { priceEl.textContent='$'+total.toFixed(2); priceEl.style.display='block'; freeEl.style.display='none'; }
+}
+
+async function submitGearReservation() {
+  const btn = document.getElementById('submit-gear-btn');
+  btn.disabled=true; btn.textContent='Submitting…';
+  const checkout = document.getElementById('checkout-date').value;
+  const returnD  = document.getElementById('return-date').value;
+  const days  = Math.max(1, Math.ceil((new Date(returnD)-new Date(checkout))/86400000));
+  const item  = state.booking.kit || state.booking.gear;
+  const isFree = state.role === 'student';
+  const total  = isFree ? 0 : (item.guest_price_per_day * days);
+  const { data, error } = await supabase.from('gear_reservations').insert({
+    user_id: state.user.id,
+    item_type: state.booking.type,
+    item_id: item.id,
+    item_name: item.name,
+    item_details: item.items_description || item.description || '',
+    checkout_date: checkout,
+    return_date: returnD,
+    days, total_price: total,
+    user_name: state.profile?.full_name || state.user.email.split('@')[0],
+    user_email: state.user.email,
+    is_student: isFree,
+  }).select().single();
+  if (error) { alert('Error: '+error.message); btn.disabled=false; btn.textContent='Submit Request'; return; }
+  document.getElementById('success-details').textContent =
+    `${data.item_name} · Checkout ${formatDate(data.checkout_date)} · Return ${formatDate(data.return_date)}`;
+  showScreen('success');
+}
+
+// ──────────────────────────────────────────
+// MY BOOKINGS
+// ──────────────────────────────────────────
+async function loadMyBookings() {
+  showScreen('mybookings');
+  document.getElementById('bookings-loading').style.display='flex';
+  document.getElementById('bookings-content').style.display='none';
+  const [{ data: studios }, { data: gear }] = await Promise.all([
+    supabase.from('studio_bookings').select('*').eq('user_id',state.user.id).order('created_at',{ascending:false}),
+    supabase.from('gear_reservations').select('*').eq('user_id',state.user.id).order('created_at',{ascending:false}),
+  ]);
+  const all = [...(studios||[]).map(b=>({...b,_t:'studio'})), ...(gear||[]).map(b=>({...b,_t:'gear'}))];
+  const pending = all.filter(b=>b.status==='pending');
+  const history = all.filter(b=>b.status!=='pending');
+  const pEl = document.getElementById('pending-bookings');
+  const hEl = document.getElementById('history-bookings');
+  pEl.innerHTML = pending.length ? pending.map(renderMyBookingRow).join('') : '<p style="color:var(--muted);font-size:0.85rem;">No pending bookings.</p>';
+  hEl.innerHTML = history.length ? history.map(renderMyBookingRow).join('') : '<p style="color:var(--muted);font-size:0.85rem;">No booking history yet.</p>';
+  document.getElementById('bookings-loading').style.display='none';
+  document.getElementById('bookings-content').style.display='block';
+}
+
+function renderMyBookingRow(b) {
+  const isStudio = !!b.studio_name;
+  const title    = isStudio ? `${b.studio_name} — ${b.time_slot}` : b.item_name;
+  const subtitle = isStudio
+    ? `${formatDate(b.booking_date)} · ${SLOTS[b.time_slot]?.time||''}`
+    : `Checkout ${formatDate(b.checkout_date)} · Return ${formatDate(b.return_date)}`;
+  return `
+  <div class="booking-row">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+        <h3 style="font-size:0.95rem;">${title}</h3>
+        <span class="status ${b.status}">${b.status}</span>
+      </div>
+      <p style="color:var(--muted);font-size:0.82rem;">${subtitle}</p>
+    </div>
+    ${b.status==='pending'?'<button class="btn-ghost" style="color:var(--muted);font-size:0.8rem;white-space:nowrap;">Contact Staff to Cancel</button>':''}
+  </div>`;
+}
+
+// ──────────────────────────────────────────
+// ADMIN PANEL
+// ──────────────────────────────────────────
+async function loadAdminBookings() {
+  document.getElementById('admin-loading').style.display='flex';
+  document.getElementById('admin-content').style.display='none';
+  const statusFilter = state.adminTab==='pending' ? ['pending'] : ['pending','confirmed','cancelled'];
+  const [{ data: studios }, { data: gear }] = await Promise.all([
+    supabase.from('studio_bookings').select('*').in('status',statusFilter).order('created_at',{ascending:false}),
+    supabase.from('gear_reservations').select('*').in('status',statusFilter).order('created_at',{ascending:false}),
+  ]);
+  const allStudios = studios||[];
+  const allGear    = gear||[];
+  const allItems   = [
+    ...allStudios.map(b=>({...b,_t:'studio'})),
+    ...allGear.map(b=>({...b,_t:'gear'}))
+  ].sort((a,b) => {
+    if (a.status==='pending'&&b.status!=='pending') return -1;
+    if (a.status!=='pending'&&b.status==='pending') return 1;
+    return new Date(b.created_at)-new Date(a.created_at);
+  });
+  // Stats
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const pendingCount   = allItems.filter(b=>b.status==='pending').length;
+  const confirmedMonth = allItems.filter(b=>b.status==='confirmed'&&b.created_at>=monthStart).length;
+  document.getElementById('admin-pending-count').textContent   = pendingCount;
+  document.getElementById('admin-confirmed-count').textContent = confirmedMonth;
+  document.getElementById('admin-total-count').textContent     = allItems.length;
+  renderAdminList(allItems);
+  document.getElementById('admin-loading').style.display='none';
+  document.getElementById('admin-content').style.display='block';
+}
+
+function renderAdminList(items) {
+  const container = document.getElementById('admin-bookings-list');
+  if (!items.length) {
+    container.innerHTML = '<p style="color:var(--muted);padding:20px 0;">No bookings to show.</p>';
+    return;
+  }
+  container.innerHTML = items.map(b => {
+    const isStudio = b._t==='studio';
+    const title    = isStudio ? `${b.studio_name} — ${b.time_slot}` : b.item_name;
+    const subtitle = isStudio
+      ? `${formatDate(b.booking_date)} · ${SLOTS[b.time_slot]?.time||''}`
+      : `Checkout ${formatDate(b.checkout_date)} → Return ${formatDate(b.return_date)} · ${b.days} day${b.days!==1?'s':''}`;
+    const priceStr = b.is_student ? 'FREE (Student)' : `$${parseFloat(b.total_price||0).toFixed(2)}`;
+    const typeTag  = isStudio ? 'Studio Booking' : b.item_type==='kit' ? 'Kit Reservation' : 'Gear Rental';
+    const bJson    = JSON.stringify(b).replace(/'/g, "\\'");
+    return `
+    <div class="admin-booking-card ${b.status==='pending'?'pending-card':''}" id="admincard-${b.id}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+            <span class="status ${b.status}">${b.status}</span>
+            <span style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">${typeTag}</span>
+          </div>
+          <h3 style="font-size:1rem;margin-bottom:4px;">${title}</h3>
+          <p style="color:var(--muted);font-size:0.82rem;">${subtitle}</p>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-weight:600;font-size:0.9rem;">${b.user_name||'—'}</div>
+          <div style="color:var(--muted);font-size:0.75rem;word-break:break-all;">${b.user_email}</div>
+          <div style="color:var(--accent2);font-size:0.82rem;margin-top:4px;font-weight:600;">${priceStr}</div>
+        </div>
+      </div>
+      ${b.status==='pending' ? `
+        <div style="display:flex;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);flex-wrap:wrap;">
+          <button class="btn btn-primary" style="padding:10px 20px;font-size:0.85rem;" onclick="approveBooking('${b.id}','${b._t}','${bJson}')">✅ Approve &amp; Email</button>
+          <button class="btn btn-danger" onclick="rejectBooking('${b.id}','${b._t}','${bJson}')">❌ Reject</button>
+        </div>` : `
+        <div style="display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+          ${(!b.is_student&&b.status==='confirmed') ? `<button class="btn btn-outline" style="padding:8px 16px;font-size:0.82rem;" onclick="generateInvoice('${bJson}')">📄 Generate Invoice</button>` : ''}
+          ${b.status==='confirmed'&&isStudio ? `<button class="btn btn-outline" style="padding:8px 16px;font-size:0.82rem;" onclick="window.open('${buildCalLink(b)}','_blank')">🗓 Calendar Link</button>` : ''}
+        </div>`}
+    </div>`;
+  }).join('');
+}
+
+async function approveBooking(id, type, bJsonRaw) {
+  const b = JSON.parse(bJsonRaw.replace(/\\'/g,"'"));
+  const table = type==='studio' ? 'studio_bookings' : 'gear_reservations';
+  const { error } = await supabase.from(table).update({ status:'confirmed', updated_at: new Date().toISOString() }).eq('id',id);
+  if (error) { alert('Error: '+error.message); return; }
+  // Open approval email
+  sendApprovalEmail(b, type);
+  // Refresh
+  await loadAdminBookings();
+}
+
+async function rejectBooking(id, type, bJsonRaw) {
+  const b = JSON.parse(bJsonRaw.replace(/\\'/g,"'"));
+  const reason = prompt('Optional: Reason for rejection (will appear in email):') || '';
+  const table = type==='studio' ? 'studio_bookings' : 'gear_reservations';
+  const { error } = await supabase.from(table).update({ status:'cancelled', staff_notes: reason, updated_at: new Date().toISOString() }).eq('id',id);
+  if (error) { alert('Error: '+error.message); return; }
+  sendRejectionEmail(b, reason);
+  await loadAdminBookings();
+}
+
+function sendApprovalEmail(b, type) {
+  const isStudio = type==='studio';
+  const calLink  = isStudio ? buildCalLink(b) : '';
+  const details  = isStudio
+    ? `📍 ${b.studio_name}\n📅 ${formatDate(b.booking_date)}\n⏰ ${b.time_slot} — ${SLOTS[b.time_slot]?.time||''}`
+    : `📦 ${b.item_name}\n📅 Checkout: ${formatDate(b.checkout_date)}\n📅 Return: ${formatDate(b.return_date)} (${b.days} day${b.days!==1?'s':''})`;
+  const subject = `✅ Your IBU Studio Booking is Confirmed!`;
+  const body = `Hi ${b.user_name||b.user_email.split('@')[0]},
+
+Great news — your booking has been confirmed! 🎉
+
+${details}
+${isStudio ? `\n🗓 Add to Google Calendar:\n${calLink}\n` : ''}
+Please arrive a few minutes early. Bring your student ID if applicable.
+
+For questions, reply to this email.
+
+See you soon!
+IBU Creative Studios Team
+International Burch University`;
+  window.open(`mailto:${b.user_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+}
+
+function sendRejectionEmail(b, reason) {
+  const subject = `Your IBU Studio Booking — Update`;
+  const body = `Hi ${b.user_name||b.user_email.split('@')[0]},
+
+We're sorry, but we're unable to confirm your recent booking request.
+
+${reason ? `Reason: ${reason}\n` : ''}
+Please feel free to submit a new request with a different date or time. We're happy to help find a slot that works.
+
+IBU Creative Studios Team
+International Burch University`;
+  window.open(`mailto:${b.user_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+}
+
+function buildCalLink(b) {
+  if (!b.booking_date||!b.time_slot||!SLOTS[b.time_slot]) return '#';
+  const d = b.booking_date.replace(/-/g,'');
+  const { start, end } = SLOTS[b.time_slot];
+  const p = new URLSearchParams({
+    action:'TEMPLATE',
+    text: `${b.studio_name} — IBU Studios`,
+    dates: `${d}T${start}/${d}T${end}`,
+    details: `Booking confirmed.\nBooking ID: ${b.id}`,
+    location: STUDIO_LOCATION,
+  });
+  return `https://calendar.google.com/calendar/render?${p.toString()}`;
+}
+
+function setAdminTab(tab) {
+  state.adminTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  loadAdminBookings();
+}
+
+// ──────────────────────────────────────────
+// GUEST INVOICE (jsPDF)
+// ──────────────────────────────────────────
+function generateInvoice(bJsonRaw) {
+  const b = JSON.parse(bJsonRaw.replace(/\\'/g,"'"));
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const invNum = 'IBU-' + b.id.substring(0,8).toUpperCase();
+  const today  = new Date().toLocaleDateString('en-GB',{year:'numeric',month:'long',day:'numeric'});
+
+  // Dark header
+  doc.setFillColor(14,14,14);
+  doc.rect(0,0,220,42,'F');
+  doc.setTextColor(232,255,71);
+  doc.setFontSize(20); doc.setFont('helvetica','bold');
+  doc.text('IBU CREATIVE STUDIOS', 14, 18);
+  doc.setTextColor(200,200,200); doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('International Burch University · Sarajevo, Bosnia and Herzegovina', 14, 27);
+  doc.text('studios@ibu.edu.ba', 14, 34);
+
+  // Invoice heading
+  doc.setTextColor(0,0,0); doc.setFontSize(26); doc.setFont('helvetica','bold');
+  doc.text('INVOICE', 14, 60);
+  doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(100,100,100);
+  doc.text(`Invoice #: ${invNum}`, 14, 70);
+  doc.text(`Issued: ${today}`, 14, 77);
+  doc.text(`Status: CONFIRMED`, 14, 84);
+
+  // Bill to
+  doc.setTextColor(0,0,0); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+  doc.text('BILLED TO', 14, 100);
+  doc.setFont('helvetica','normal'); doc.setTextColor(60,60,60); doc.setFontSize(10);
+  doc.text(b.user_name||'Guest', 14, 109);
+  doc.text(b.user_email, 14, 116);
+
+  // Separator
+  doc.setDrawColor(220,220,220); doc.line(14,124,196,124);
+
+  // Table header
+  doc.setFillColor(245,245,245); doc.rect(14,127,182,10,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(80,80,80);
+  doc.text('DESCRIPTION', 18, 134);
+  doc.text('DETAILS', 95, 134);
+  doc.text('AMOUNT', 170, 134);
+
+  // Row
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(0,0,0);
+  const isStudio = !!b.studio_name;
+  const desc     = isStudio ? b.studio_name : b.item_name;
+  const det      = isStudio
+    ? `${formatDate(b.booking_date)} · ${b.time_slot}`
+    : `${formatDate(b.checkout_date)} – ${formatDate(b.return_date)} · ${b.days} day${b.days!==1?'s':''}`;
+  doc.text(desc, 18, 148);
+  doc.setFontSize(8); doc.setTextColor(120,120,120);
+  doc.text(det, 18, 155);
+  doc.setFontSize(10); doc.setTextColor(0,0,0);
+  doc.text('$'+parseFloat(b.total_price||0).toFixed(2), 170, 148);
+
+  // Total
+  doc.setDrawColor(220,220,220); doc.line(14,164,196,164);
+  doc.setFont('helvetica','bold'); doc.setFontSize(12);
+  doc.text('TOTAL DUE', 128, 178);
+  doc.setTextColor(255,107,53);
+  doc.text('$'+parseFloat(b.total_price||0).toFixed(2), 170, 178);
+
+  // Note
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(150,150,150);
+  doc.text('Payment is due in person upon pickup at IBU Creative Studios.', 14, 198);
+  doc.text('Thank you for choosing IBU Studios!', 14, 205);
+
+  doc.save(`IBU-Invoice-${invNum}.pdf`);
+}
+
+// ──────────────────────────────────────────
+// UTILITIES
+// ──────────────────────────────────────────
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+}
+
+// ──────────────────────────────────────────
+// EXPOSE GLOBALS (needed for onclick attributes)
+// ──────────────────────────────────────────
+window.signInWithGoogle   = signInWithGoogle;
+window.signOut            = signOut;
+window.showScreen         = showScreen;
+window.openCalendar       = openCalendar;
+window.selectDay          = selectDay;
+window.selectSlot         = selectSlot;
+window.prevMonth          = prevMonth;
+window.nextMonth          = nextMonth;
+window.goToStudioConfirm  = goToStudioConfirm;
+window.submitStudioBooking = submitStudioBooking;
+window.goToVideoKits      = goToVideoKits;
+window.goToPhotoKit       = goToPhotoKit;
+window.goToProductionKit  = goToProductionKit;
+window.selectKit          = selectKit;
+window.goToIndividualGear = goToIndividualGear;
+window.selectGear         = selectGear;
+window.updateGearPriceSummary = updateGearPriceSummary;
+window.submitGearReservation  = submitGearReservation;
+window.loadMyBookings     = loadMyBookings;
+window.approveBooking     = approveBooking;
+window.rejectBooking      = rejectBooking;
+window.setAdminTab        = setAdminTab;
+window.generateInvoice    = generateInvoice;
+
+// START
+init();
+</script>
+</body>
+</html>
