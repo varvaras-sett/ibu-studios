@@ -1134,6 +1134,9 @@ async function loadAdminBookings() {
   document.getElementById('admin-pending-count').textContent   = pendingCount;
   document.getElementById('admin-confirmed-count').textContent = confirmedMonth;
   document.getElementById('admin-total-count').textContent     = allItems.length;
+  // Store in memory so buttons can look up by ID (avoids JSON encoding issues)
+  window._adminBookings = {};
+  allItems.forEach(b => { window._adminBookings[b.id] = b; });
   renderAdminList(allItems);
   document.getElementById('admin-loading').style.display='none';
   document.getElementById('admin-content').style.display='block';
@@ -1153,7 +1156,6 @@ function renderAdminList(items) {
       : `Checkout ${formatDate(b.checkout_date)} → Return ${formatDate(b.return_date)} · ${b.days} day${b.days!==1?'s':''}`;
     const priceStr = b.is_student ? 'FREE (Student)' : `$${parseFloat(b.total_price||0).toFixed(2)}`;
     const typeTag  = isStudio ? 'Studio Booking' : b.item_type==='kit' ? 'Kit Reservation' : 'Gear Rental';
-    const bJson    = JSON.stringify(b).replace(/'/g, "\\'");
     return `
     <div class="admin-booking-card ${b.status==='pending'?'pending-card':''}" id="admincard-${b.id}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
@@ -1173,36 +1175,42 @@ function renderAdminList(items) {
       </div>
       ${b.status==='pending' ? `
         <div style="display:flex;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);flex-wrap:wrap;">
-          <button class="btn btn-primary" style="padding:10px 20px;font-size:0.85rem;" onclick="approveBooking('${b.id}','${b._t}','${bJson}')">✅ Approve &amp; Email</button>
-          <button class="btn btn-danger" onclick="rejectBooking('${b.id}','${b._t}','${bJson}')">❌ Reject</button>
+          <button class="btn btn-primary" style="padding:10px 20px;font-size:0.85rem;" onclick="approveBooking('${b.id}')">✅ Approve &amp; Email</button>
+          <button class="btn btn-danger" onclick="rejectBooking('${b.id}')">❌ Reject</button>
         </div>` : `
         <div style="display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-          ${(!b.is_student&&b.status==='confirmed') ? `<button class="btn btn-outline" style="padding:8px 16px;font-size:0.82rem;" onclick="generateInvoice('${bJson}')">📄 Generate Invoice</button>` : ''}
-          ${b.status==='confirmed'&&isStudio ? `<button class="btn btn-outline" style="padding:8px 16px;font-size:0.82rem;" onclick="window.open('${buildCalLink(b)}','_blank')">🗓 Calendar Link</button>` : ''}
+          ${(!b.is_student&&b.status==='confirmed') ? `<button class="btn btn-outline" style="padding:8px 16px;font-size:0.82rem;" onclick="generateInvoice('${b.id}')">📄 Generate Invoice</button>` : ''}
+          ${b.status==='confirmed'&&isStudio ? `<button class="btn btn-outline" style="padding:8px 16px;font-size:0.82rem;" onclick="addToMyCalendar('${b.id}')">🗓 Add to My Calendar</button>` : ''}
         </div>`}
     </div>`;
   }).join('');
 }
 
-async function approveBooking(id, type, bJsonRaw) {
-  const b = JSON.parse(bJsonRaw.replace(/\\'/g,"'"));
-  const table = type==='studio' ? 'studio_bookings' : 'gear_reservations';
+async function approveBooking(id) {
+  const b = window._adminBookings[id];
+  if (!b) { alert('Booking not found. Please refresh the page.'); return; }
+  const table = b._t==='studio' ? 'studio_bookings' : 'gear_reservations';
   const { error } = await supabase.from(table).update({ status:'confirmed', updated_at: new Date().toISOString() }).eq('id',id);
   if (error) { alert('Error: '+error.message); return; }
-  // Open approval email
-  sendApprovalEmail(b, type);
-  // Refresh
+  sendApprovalEmail(b, b._t);
   await loadAdminBookings();
 }
 
-async function rejectBooking(id, type, bJsonRaw) {
-  const b = JSON.parse(bJsonRaw.replace(/\\'/g,"'"));
+async function rejectBooking(id) {
+  const b = window._adminBookings[id];
+  if (!b) { alert('Booking not found. Please refresh the page.'); return; }
   const reason = prompt('Optional: Reason for rejection (will appear in email):') || '';
-  const table = type==='studio' ? 'studio_bookings' : 'gear_reservations';
+  const table = b._t==='studio' ? 'studio_bookings' : 'gear_reservations';
   const { error } = await supabase.from(table).update({ status:'cancelled', staff_notes: reason, updated_at: new Date().toISOString() }).eq('id',id);
   if (error) { alert('Error: '+error.message); return; }
   sendRejectionEmail(b, reason);
   await loadAdminBookings();
+}
+
+function addToMyCalendar(id) {
+  const b = window._adminBookings[id];
+  if (!b) return;
+  window.open(buildCalLink(b), '_blank');
 }
 
 function sendApprovalEmail(b, type) {
@@ -1266,8 +1274,9 @@ function setAdminTab(tab) {
 // ──────────────────────────────────────────
 // GUEST INVOICE (jsPDF)
 // ──────────────────────────────────────────
-function generateInvoice(bJsonRaw) {
-  const b = JSON.parse(bJsonRaw.replace(/\\'/g,"'"));
+function generateInvoice(id) {
+  const b = window._adminBookings[id];
+  if (!b) { alert('Booking not found. Please refresh.'); return; }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   const invNum = 'IBU-' + b.id.substring(0,8).toUpperCase();
