@@ -305,7 +305,7 @@ label { font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 
         <p style="color:var(--muted);font-size:0.85rem;margin-top:8px;">Book the Video, Photo, or Production studio for a time slot.</p>
         <p style="margin-top:16px;font-size:0.78rem;color:var(--accent);">→ 3 studios available</p>
       </div>
-      <div class="card clickable" onclick="showScreen('kits-select')">
+      <div class="card clickable" onclick="loadGearKits()">
         <div class="icon-box">🎒</div>
         <h3>Kits &amp; Bundle Gear</h3>
         <p style="color:var(--muted);font-size:0.85rem;margin-top:8px;">Reserve a studio's complete gear bundle to take out.</p>
@@ -873,9 +873,9 @@ function renderCalendar() {
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const daysInMonth = lastDay.getDate();
-  const startingDayOfWeek = firstDay.getDay() || 6;
+  const startingDayOfWeek = firstDay.getDay();
   const days = [];
-  for (let i = 0; i < startingDayOfWeek - 1; i++) days.push('');
+  for (let i = 0; i < startingDayOfWeek; i++) days.push('');
   for (let i = 1; i <= daysInMonth; i++) days.push(i);
   const container = document.getElementById('calendar-grid');
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -1008,6 +1008,7 @@ async function submitStudioBooking() {
 // GEAR KITS
 // ──────────────────────────────────────────
 async function loadGearKits() {
+  showScreen('kits-select');
   const { data } = await supabase.from('gear_kits').select('*');
   state.gearKits = {};
   (data || []).forEach(k => {
@@ -1021,14 +1022,17 @@ function renderKitCards() {
   const container = document.getElementById('kits-cards');
   if (!container) return;
   const kits = Object.values(state.gearKits).flat();
-  container.innerHTML = kits.map(k => `
+  container.innerHTML = kits.map(k => {
+    const studio = state.studios.find(s => s.id === k.studio_id);
+    const studioName = studio ? studio.name : k.studio_id;
+    return `
     <div class="card clickable" onclick="selectKit('${k.id}','${k.studio_id}')">
       <div class="icon-box">🎒</div>
-      <h3>${k.studio_id} Kit</h3>
+      <h3>${studioName} Kit</h3>
       <p style="color:var(--muted);font-size:0.85rem;margin-top:8px;">${k.description||'Complete gear bundle'}</p>
       <p style="margin-top:16px;font-size:0.78rem;color:var(--accent);">→ View items</p>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 function selectKit(kitId, studioId) {
@@ -1038,7 +1042,9 @@ function selectKit(kitId, studioId) {
 
 async function loadKitItems(studioId) {
   const { data } = await supabase.from('gear_items').select('*').eq('kit_id', state.booking.kit);
-  const screen = studioId.toLowerCase().includes('video') ? 'video-kits' : studioId.toLowerCase().includes('photo') ? 'photo-kits' : 'production-kits';
+  const studio = state.studios.find(s => s.id === studioId);
+  const studioName = studio ? studio.name : studioId;
+  const screen = studioName.toLowerCase().includes('video') ? 'video-kits' : studioName.toLowerCase().includes('photo') ? 'photo-kits' : 'production-kits';
   const container = document.getElementById(screen.replace('kits','kit') + '-items');
   if (!container) return;
   container.innerHTML = (data || []).map(g => `
@@ -1056,7 +1062,7 @@ async function loadKitItems(studioId) {
 // INDIVIDUAL GEAR
 // ──────────────────────────────────────────
 async function goToIndividualGear() {
-  const { data } = await supabase.from('gear_items').select('*').not('kit_id','is.null');
+  const { data } = await supabase.from('gear_items').select('*').not('kit_id', 'is', null);
   state.individualGear = data || [];
   renderIndividualGear();
   showScreen('individual-gear');
@@ -1066,7 +1072,7 @@ function renderIndividualGear() {
   const container = document.getElementById('individual-gear-items');
   container.innerHTML = state.individualGear.map(g => `
     <div class="card" style="position:relative;">
-      <input type="checkbox" class="individual-gear-item" data-id="${g.id}" data-name="${g.name}" data-price="${g.rental_price}" style="position:absolute;top:12px;right:12px;width:18px;height:18px;cursor:pointer;onchange='updateGearPriceSummary()'" />
+      <input type="checkbox" class="individual-gear-item" data-id="${g.id}" data-name="${g.name}" data-price="${g.rental_price}" style="position:absolute;top:12px;right:12px;width:18px;height:18px;cursor:pointer;" onchange="updateGearPriceSummary()" />
       <h3 style="margin-bottom:8px;padding-right:40px;">${g.name}</h3>
       <p style="color:var(--muted);font-size:0.85rem;margin-bottom:8px;">${g.description||'Equipment'}</p>
       <p style="color:var(--accent2);font-weight:600;">$${g.rental_price} per day</p>
@@ -1194,10 +1200,6 @@ async function loadAdminBookings() {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const pendingCount   = allItems.filter(b=>b.status==='pending').length;
   const confirmedMonth = allItems.filter(b=>b.status==='confirmed'&&b.created_at>=monthStart).length;
-  document.getElementById('admin-pending-count').textContent   = pendingCount;
-  document.getElementById('admin-confirmed-count').textContent = confirmedMonth;
-  document.getElementById('admin-total-count').textContent     = allItems.length;
-  // Update overview section too
   document.getElementById('overview-pending').textContent   = pendingCount;
   document.getElementById('overview-confirmed').textContent = confirmedMonth;
   document.getElementById('overview-total').textContent     = allItems.length;
@@ -1524,10 +1526,10 @@ function renderAdminUsers(users) {
       <td><strong>${u.full_name || 'Unknown'}</strong></td>
       <td class="user-email">${u.email}</td>
       <td>
-        <select class="user-role-select" value="${u.role}" onchange="changeUserRole('${u.id}', this.value)">
-          <option value="student">Student</option>
-          <option value="staff">Staff</option>
-          <option value="guest">Guest</option>
+        <select class="user-role-select" onchange="changeUserRole('${u.id}', this.value)">
+          <option value="student" ${u.role==='student'?'selected':''}>Student</option>
+          <option value="staff" ${u.role==='staff'?'selected':''}>Staff</option>
+          <option value="guest" ${u.role==='guest'?'selected':''}>Guest</option>
         </select>
       </td>
       <td style="font-size:0.85rem;color:var(--muted);">${formatDate(u.created_at)}</td>
@@ -1656,6 +1658,7 @@ window.rejectBooking      = rejectBooking;
 window.setAdminTab        = setAdminTab;
 window.generateInvoice    = generateInvoice;
 window.showAdminSection   = showAdminSection;
+window.loadGearKits       = loadGearKits;
 window.loadAdminOverview  = loadAdminOverview;
 window.loadAdminCalendar  = loadAdminCalendar;
 window.prevWeek           = prevWeek;
