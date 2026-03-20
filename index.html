@@ -754,10 +754,16 @@ async function init() {
 
   supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    await loadUserAndRoute(session.user);
-  } else {
+  try {
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000));
+    const { data: { session } } = await Promise.race([supabase.auth.getSession(), timeout]);
+    if (session) {
+      await loadUserAndRoute(session.user);
+    } else {
+      showScreen('login');
+    }
+  } catch (err) {
+    // If Supabase times out (e.g. project paused), show login anyway
     showScreen('login');
   }
 
