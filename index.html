@@ -754,23 +754,14 @@ async function init() {
 
   supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  try {
-    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000));
-    const { data: { session } } = await Promise.race([supabase.auth.getSession(), timeout]);
-    if (session) {
-      await loadUserAndRoute(session.user);
-    } else {
-      showScreen('login');
-    }
-  } catch (err) {
-    // If Supabase times out (e.g. project paused), show login anyway
-    showScreen('login');
-  }
+  // Show login immediately — never blocks on loading screen
+  showScreen('login');
 
+  // onAuthStateChange fires INITIAL_SESSION on startup — handles auto-login
   supabase.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' && session) {
+    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
       await loadUserAndRoute(session.user);
-    } else if (event === 'SIGNED_OUT') {
+    } else if (event === 'SIGNED_OUT' || (event === 'INITIAL_SESSION' && !session)) {
       Object.assign(state, { user: null, profile: null, role: null });
       showScreen('login');
     }
