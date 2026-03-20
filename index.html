@@ -1278,22 +1278,29 @@ function filterAdminBookings(query) {
 
 async function approveBooking(id) {
   const b = window._adminBookings[id];
-  if (!b) { alert('Booking not found. Please refresh the page.'); return; }
+  if (!b) { showToast('Booking not found. Please refresh.', 'error'); return; }
   const table = b._t==='studio' ? 'studio_bookings' : 'gear_reservations';
   const { error } = await supabase.from(table).update({ status:'confirmed', updated_at: new Date().toISOString() }).eq('id',id);
-  if (error) { alert('Error: '+error.message); return; }
+  if (error) { showToast('Error: '+error.message, 'error'); return; }
+  // Open Gmail compose with approval email
   sendApprovalEmail(b, b._t);
+  // Open Google Calendar for studio bookings
+  if (b._t === 'studio') {
+    setTimeout(() => window.open(buildCalLink(b), '_blank'), 800);
+  }
+  showToast('✅ Booking approved! Gmail + Calendar opened.', 'success');
   await loadAdminBookings();
 }
 
 async function rejectBooking(id) {
   const b = window._adminBookings[id];
-  if (!b) { alert('Booking not found. Please refresh the page.'); return; }
+  if (!b) { showToast('Booking not found. Please refresh.', 'error'); return; }
   const reason = prompt('Optional: Reason for rejection (will appear in email):') || '';
   const table = b._t==='studio' ? 'studio_bookings' : 'gear_reservations';
   const { error } = await supabase.from(table).update({ status:'cancelled', staff_notes: reason, updated_at: new Date().toISOString() }).eq('id',id);
-  if (error) { alert('Error: '+error.message); return; }
+  if (error) { showToast('Error: '+error.message, 'error'); return; }
   sendRejectionEmail(b, reason);
+  showToast('❌ Booking rejected. Gmail opened.', 'success');
   await loadAdminBookings();
 }
 
@@ -1303,6 +1310,17 @@ function addToMyCalendar(id) {
   window.open(buildCalLink(b), '_blank');
 }
 
+function showToast(msg, type='success') {
+  const existing = document.getElementById('toast-msg');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.id = 'toast-msg';
+  t.textContent = msg;
+  t.style.cssText = `position:fixed;bottom:32px;right:32px;z-index:9999;padding:14px 22px;border-radius:10px;font-size:0.9rem;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,0.4);transition:opacity 0.4s;background:${type==='error'?'#ff4d4d':type==='success'?'#1a1a1a':'#1a1a1a'};color:${type==='error'?'#fff':'var(--accent)'};border:1px solid ${type==='error'?'#ff4d4d':'var(--accent)'};`;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(),400); }, 3500);
+}
+
 function sendApprovalEmail(b, type) {
   const isStudio = type==='studio';
   const calLink  = isStudio ? buildCalLink(b) : '';
@@ -1310,34 +1328,17 @@ function sendApprovalEmail(b, type) {
     ? `📍 ${b.studio_name}\n📅 ${formatDate(b.booking_date)}\n⏰ ${b.time_slot} — ${SLOTS[b.time_slot]?.time||''}`
     : `📦 ${b.item_name}\n📅 Checkout: ${formatDate(b.checkout_date)}\n📅 Return: ${formatDate(b.return_date)} (${b.days} day${b.days!==1?'s':''})`;
   const subject = `✅ Your IBU Studio Booking is Confirmed!`;
-  const body = `Hi ${b.user_name||b.user_email.split('@')[0]},
-
-Great news — your booking has been confirmed! 🎉
-
-${details}
-${isStudio ? `\n🗓 Add to Google Calendar:\n${calLink}\n` : ''}
-Please arrive a few minutes early. Bring your student ID if applicable.
-
-For questions, reply to this email.
-
-See you soon!
-IBU Creative Studios Team
-International Burch University`;
-  window.open(`mailto:${b.user_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+  const body = `Hi ${b.user_name||b.user_email.split('@')[0]},\n\nGreat news — your booking has been confirmed! 🎉\n\n${details}${isStudio ? `\n\n🗓 Add to Google Calendar:\n${calLink}` : ''}\n\nPlease arrive a few minutes early. Bring your student ID if applicable.\n\nFor questions, reply to this email.\n\nSee you soon!\nIBU Creative Studios Team\nInternational Burch University`;
+  // Use Gmail compose URL — works in browser without needing a mail app
+  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(b.user_email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.open(gmailUrl, '_blank');
 }
 
 function sendRejectionEmail(b, reason) {
   const subject = `Your IBU Studio Booking — Update`;
-  const body = `Hi ${b.user_name||b.user_email.split('@')[0]},
-
-We're sorry, but we're unable to confirm your recent booking request.
-
-${reason ? `Reason: ${reason}\n` : ''}
-Please feel free to submit a new request with a different date or time. We're happy to help find a slot that works.
-
-IBU Creative Studios Team
-International Burch University`;
-  window.open(`mailto:${b.user_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+  const body = `Hi ${b.user_name||b.user_email.split('@')[0]},\n\nWe're sorry, but we're unable to confirm your recent booking request.\n\n${reason ? `Reason: ${reason}\n\n` : ''}Please feel free to submit a new request with a different date or time. We're happy to help find a slot that works.\n\nIBU Creative Studios Team\nInternational Burch University`;
+  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(b.user_email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.open(gmailUrl, '_blank');
 }
 
 function buildCalLink(b) {
@@ -1361,7 +1362,8 @@ function showAdminSection(section) {
   document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
   document.getElementById('admin-' + section).classList.add('active');
   document.querySelectorAll('.admin-nav-item').forEach(item => item.classList.remove('active'));
-  event.target.classList.add('active');
+  const activeNav = document.querySelector(`.admin-nav-item[onclick*="'${section}'"]`);
+  if (activeNav) activeNav.classList.add('active');
 
   if (section === 'overview') {
     loadAdminOverview();
@@ -1671,6 +1673,7 @@ window.changeUserRole     = changeUserRole;
 window.filterAdminBookings = filterAdminBookings;
 window.filterAdminUsers   = filterAdminUsers;
 window.addToMyCalendar    = addToMyCalendar;
+window.showToast          = showToast;
 window.loadAdminBookings  = loadAdminBookings;
 
 // START
