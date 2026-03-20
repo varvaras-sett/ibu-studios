@@ -221,6 +221,51 @@ label { font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 
 .today-booking-time { font-weight: 600; margin-bottom: 4px; }
 .today-booking-details { font-size: 0.85rem; color: var(--muted); }
 
+/* STAT GRID 4 */
+.stat-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px; }
+@media (max-width:900px) { .stat-grid-4 { grid-template-columns:repeat(2,1fr); } }
+
+/* ADMIN MONTHLY CALENDAR */
+.admin-month-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:16px; }
+.admin-month-header { text-align:center; font-size:0.7rem; text-transform:uppercase; color:var(--muted); padding:8px 4px; letter-spacing:0.5px; }
+.admin-month-day { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:8px 6px; min-height:66px; cursor:pointer; transition:border-color 0.15s; }
+.admin-month-day:hover { border-color:#555; }
+.admin-month-day.amd-today { border-color:var(--accent); }
+.admin-month-day.amd-selected { border-color:var(--accent); background:rgba(232,255,71,0.05); }
+.admin-month-day.amd-empty { background:transparent; border-color:transparent; cursor:default; }
+.amd-num { font-size:0.78rem; font-weight:600; margin-bottom:4px; }
+.amd-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin:1px; }
+.amd-dot.pending { background:var(--accent2); }
+.amd-dot.confirmed { background:#4caf50; }
+.amd-dot.cancelled { background:#ff4d4d; }
+.day-detail { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; margin-top:8px; }
+.day-detail-heading { font-family:'Syne',sans-serif; font-weight:700; font-size:0.95rem; margin-bottom:14px; color:var(--accent); }
+.day-detail-item { padding:10px 0; border-bottom:1px solid var(--border); font-size:0.85rem; }
+.day-detail-item:last-child { border-bottom:none; }
+
+/* ANALYTICS */
+.analytics-bar-row { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.analytics-bar-label { width:130px; font-size:0.85rem; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.analytics-bar-track { flex:1; height:8px; background:var(--border); border-radius:4px; overflow:hidden; }
+.analytics-bar-fill { height:100%; background:var(--accent); border-radius:4px; transition:width 0.8s ease; }
+.analytics-bar-value { width:32px; text-align:right; font-size:0.82rem; color:var(--muted); }
+.analytics-2col { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:28px; }
+@media (max-width:700px) { .analytics-2col { grid-template-columns:1fr; } }
+
+/* AVAILABILITY GRID */
+.avail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:28px; }
+.avail-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; }
+.avail-name { font-size:0.85rem; font-weight:600; margin-bottom:8px; }
+.avail-slots { display:flex; gap:6px; }
+.avail-slot { flex:1; text-align:center; padding:4px 2px; border-radius:4px; font-size:0.65rem; font-weight:700; text-transform:uppercase; }
+.avail-slot.free { background:rgba(76,175,80,0.15); color:#4caf50; border:1px solid rgba(76,175,80,0.3); }
+.avail-slot.taken { background:rgba(255,77,77,0.12); color:#ff4d4d; border:1px solid rgba(255,77,77,0.2); }
+.avail-slot.booked-pending { background:rgba(255,107,53,0.12); color:var(--accent2); border:1px solid rgba(255,107,53,0.2); }
+
+/* BATCH BAR */
+.batch-bar { display:none; align-items:center; gap:12px; background:rgba(232,255,71,0.06); border:1px solid rgba(232,255,71,0.3); border-radius:8px; padding:10px 16px; margin-bottom:14px; font-size:0.85rem; }
+.batch-bar.visible { display:flex; }
+
 /* RESPONSIVE */
 @media (max-width: 640px) {
   .grid-3, .stat-grid { grid-template-columns: 1fr; }
@@ -576,6 +621,9 @@ label { font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 
         <div class="admin-nav-item" onclick="showAdminSection('users')">
           👥 Users
         </div>
+        <div class="admin-nav-item" onclick="showAdminSection('analytics')">
+          📈 Analytics
+        </div>
         <div class="admin-nav-spacer"></div>
         <div class="admin-nav-signout" onclick="signOut()">
           🚪 Sign Out
@@ -592,7 +640,7 @@ label { font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 
             <p>Dashboard summary and recent activity</p>
           </div>
           <div class="admin-section-body">
-            <div class="stat-grid">
+            <div class="stat-grid-4">
               <div class="stat-card">
                 <div class="stat-number" id="overview-pending">—</div>
                 <div class="stat-label">Pending Approval</div>
@@ -605,7 +653,14 @@ label { font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 
                 <div class="stat-number" id="overview-total">—</div>
                 <div class="stat-label">Total Bookings</div>
               </div>
+              <div class="stat-card">
+                <div class="stat-number" id="overview-revenue" style="font-size:1.4rem;">—</div>
+                <div class="stat-label">Revenue This Month</div>
+              </div>
             </div>
+
+            <h3 style="margin-bottom:12px;">Studio Availability — Today</h3>
+            <div id="overview-availability" style="margin-bottom:28px;"></div>
 
             <h3 style="margin-bottom:16px;">Today's Bookings</h3>
             <div id="overview-today" style="margin-bottom:32px;"></div>
@@ -622,8 +677,19 @@ label { font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 
             <p>Approve or reject studio and gear requests</p>
           </div>
           <div class="admin-section-body">
-            <div class="admin-search">
-              <input type="text" id="admin-search-input" placeholder="Search by name, email, or booking ID..." oninput="filterAdminBookings(this.value)">
+            <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+              <div class="admin-search" style="flex:1;margin-bottom:0;">
+                <input type="text" id="admin-search-input" placeholder="Search by name, email, or booking ID..." oninput="filterAdminBookings(this.value)">
+              </div>
+              <button class="btn btn-outline" style="padding:10px 16px;font-size:0.85rem;white-space:nowrap;" onclick="exportBookingsCSV()">⬇ Export CSV</button>
+            </div>
+
+            <div class="batch-bar" id="batch-bar">
+              <span id="batch-count" style="color:var(--accent);font-weight:600;"></span>
+              <span style="color:var(--muted);">selected</span>
+              <button class="btn btn-primary" style="padding:8px 16px;font-size:0.82rem;" onclick="batchApprove()">✅ Approve All</button>
+              <button class="btn btn-danger" style="padding:8px 16px;" onclick="batchReject()">❌ Reject All</button>
+              <button class="btn-ghost" onclick="clearBatchSelect()">Clear</button>
             </div>
 
             <div class="tabs">
@@ -644,21 +710,77 @@ label { font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 
         <!-- CALENDAR SECTION -->
         <div class="admin-section" id="admin-calendar">
           <div class="admin-content-header">
-            <h2>Weekly Calendar</h2>
-            <p>View all studio and gear reservations for the week</p>
+            <h2>Calendar</h2>
+            <p>Click any day to see all bookings for that date</p>
           </div>
           <div class="admin-section-body">
-            <div class="week-nav">
-              <button class="btn btn-outline" style="padding:8px 14px;font-size:0.85rem;" onclick="prevWeek()">← Previous Week</button>
-              <span class="week-display" id="week-label"></span>
-              <button class="btn btn-outline" style="padding:8px 14px;font-size:0.85rem;" onclick="nextWeek()">Next Week →</button>
+            <div class="cal-nav" style="margin-bottom:16px;">
+              <button class="cal-nav-btn" onclick="adminCalPrev()">‹</button>
+              <span id="admin-cal-month-label" style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem;"></span>
+              <button class="cal-nav-btn" onclick="adminCalNext()">›</button>
+            </div>
+            <div style="margin-bottom:12px;display:flex;gap:16px;font-size:0.78rem;color:var(--muted);">
+              <span><span class="amd-dot confirmed" style="display:inline-block;"></span> Confirmed</span>
+              <span><span class="amd-dot pending" style="display:inline-block;"></span> Pending</span>
+              <span><span class="amd-dot cancelled" style="display:inline-block;"></span> Cancelled</span>
+            </div>
+            <div id="admin-month-grid-container"></div>
+            <div id="admin-cal-day-detail"></div>
+          </div>
+        </div>
+
+        <!-- ANALYTICS SECTION -->
+        <div class="admin-section" id="admin-analytics">
+          <div class="admin-content-header">
+            <h2>Analytics</h2>
+            <p>Booking trends, revenue, and usage breakdown</p>
+          </div>
+          <div class="admin-section-body">
+            <div class="stat-grid-4" style="margin-bottom:28px;">
+              <div class="stat-card">
+                <div class="stat-number" id="analytics-total-revenue" style="font-size:1.4rem;">—</div>
+                <div class="stat-label">Total Revenue</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number" id="analytics-month-revenue" style="font-size:1.4rem;">—</div>
+                <div class="stat-label">Revenue This Month</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number" id="analytics-student-count">—</div>
+                <div class="stat-label">Student Bookings</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number" id="analytics-guest-count">—</div>
+                <div class="stat-label">Guest Bookings</div>
+              </div>
             </div>
 
-            <h3 style="margin-bottom:12px;">Studios</h3>
-            <div id="admin-calendar-grid"></div>
-
-            <h3 style="margin-bottom:12px;margin-top:32px;">Gear Reservations</h3>
-            <div id="admin-gear-reservations"></div>
+            <div class="analytics-2col">
+              <div class="card">
+                <h3 style="margin-bottom:16px;">Bookings by Studio</h3>
+                <div id="analytics-studio-bars"></div>
+              </div>
+              <div class="card">
+                <h3 style="margin-bottom:16px;">Booking Types</h3>
+                <div style="margin-bottom:12px;">
+                  <div style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:4px;">
+                    <span id="analytics-type-studio-label">Studio Bookings</span>
+                  </div>
+                  <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:10px;">
+                    <div id="analytics-type-studio-pct" style="height:100%;background:var(--accent);border-radius:4px;transition:width 0.8s ease;width:0%"></div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:4px;">
+                    <span id="analytics-type-gear-label">Gear Reservations</span>
+                  </div>
+                  <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;">
+                    <div id="analytics-type-gear-pct" style="height:100%;background:var(--accent2);border-radius:4px;transition:width 0.8s ease;width:0%"></div>
+                  </div>
+                </div>
+                <hr class="divider" style="margin:20px 0;" />
+                <h3 style="margin-bottom:12px;">Last 7 Days Activity</h3>
+                <div id="analytics-trend"></div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -735,7 +857,10 @@ const state = {
   calMonth: new Date().getMonth(),
   availability: {},
   adminWeekStart: getMonday(new Date()),
-  adminCurrentUsers: []
+  adminCurrentUsers: [],
+  adminCalYear: new Date().getFullYear(),
+  adminCalMonth: new Date().getMonth(),
+  adminCalSelected: null
 };
 
 // ──────────────────────────────────────────
@@ -1228,6 +1353,8 @@ function renderAdminList(items) {
     return `
     <div class="admin-booking-card ${b.status==='pending'?'pending-card':''}" id="admincard-${b.id}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+        ${b.status==='pending'?`<input type="checkbox" class="batch-checkbox" data-id="${b.id}" onchange="updateBatchBar()" style="margin-top:4px;flex-shrink:0;width:16px;height:16px;cursor:pointer;accent-color:var(--accent);" />`:''}
+
         <div style="flex:1;min-width:0;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
             <span class="status ${b.status}">${b.status}</span>
@@ -1372,17 +1499,42 @@ function showAdminSection(section) {
     loadAdminCalendar();
   } else if (section === 'users') {
     loadAdminUsers();
+  } else if (section === 'analytics') {
+    loadAdminAnalytics();
   }
 }
 
 async function loadAdminOverview() {
-  // Load stats (already done in loadAdminBookings)
-  // Load today's bookings
   const today = new Date().toISOString().split('T')[0];
-  const [{ data: studioToday }, { data: gearToday }] = await Promise.all([
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+
+  const [{ data: studioToday }, { data: gearToday }, { data: confStudios }, { data: confGear }] = await Promise.all([
     supabase.from('studio_bookings').select('*').eq('booking_date', today),
     supabase.from('gear_reservations').select('*').eq('checkout_date', today),
+    supabase.from('studio_bookings').select('total_price').eq('status','confirmed').gte('created_at', monthStart),
+    supabase.from('gear_reservations').select('total_price').eq('status','confirmed').gte('created_at', monthStart),
   ]);
+
+  // Revenue this month
+  const revenue = [...(confStudios||[]), ...(confGear||[])].reduce((s,b) => s + parseFloat(b.total_price||0), 0);
+  const revEl = document.getElementById('overview-revenue');
+  if (revEl) revEl.textContent = '$' + revenue.toFixed(2);
+
+  // Studio availability for today
+  const availEl = document.getElementById('overview-availability');
+  if (availEl && state.studios.length) {
+    availEl.innerHTML = `<div class="avail-grid">${state.studios.map(s => {
+      const slots = ['T1','T2','T3'].map(slot => {
+        const booking = (studioToday||[]).find(b => b.studio_name === s.name && b.time_slot === slot);
+        let cls = 'free';
+        if (booking) cls = booking.status === 'confirmed' ? 'taken' : 'booked-pending';
+        return `<div class="avail-slot ${cls}">${slot}</div>`;
+      }).join('');
+      return `<div class="avail-card"><div class="avail-name">${s.name}</div><div class="avail-slots">${slots}</div></div>`;
+    }).join('')}</div>`;
+  } else if (availEl) {
+    availEl.innerHTML = '<p style="color:var(--muted);font-size:0.85rem;">No studios loaded.</p>';
+  }
   const todayItems = [
     ...(studioToday||[]).map(b=>({...b,_t:'studio'})),
     ...(gearToday||[]).map(b=>({...b,_t:'gear'}))
@@ -1432,71 +1584,114 @@ async function loadAdminOverview() {
 }
 
 async function loadAdminCalendar() {
-  const weekStart = state.adminWeekStart;
-  const weekEnd = new Date(weekStart.getTime() + 6 * 86400000);
-  const weekStartStr = weekStart.toISOString().split('T')[0];
-  const weekEndStr = weekEnd.toISOString().split('T')[0];
+  const year = state.adminCalYear;
+  const month = state.adminCalMonth;
+  const monthStr = String(month + 1).padStart(2, '0');
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const monthStart = `${year}-${monthStr}-01`;
+  const monthEnd = `${year}-${monthStr}-${String(daysInMonth).padStart(2,'0')}`;
 
-  document.getElementById('week-label').textContent = formatDateRange(weekStart, weekEnd);
+  document.getElementById('admin-cal-month-label').textContent =
+    new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-  // Fetch bookings for the week
   const [{ data: studioData }, { data: gearData }] = await Promise.all([
-    supabase.from('studio_bookings').select('*').gte('booking_date', weekStartStr).lte('booking_date', weekEndStr).in('status', ['pending', 'confirmed']),
-    supabase.from('gear_reservations').select('*').gte('checkout_date', weekStartStr).lte('return_date', weekEndStr).in('status', ['pending', 'confirmed']),
+    supabase.from('studio_bookings').select('*').gte('booking_date', monthStart).lte('booking_date', monthEnd),
+    supabase.from('gear_reservations').select('*').gte('checkout_date', monthStart).lte('return_date', monthEnd),
   ]);
 
-  // Render studio calendar grid
-  const studios = ['Video', 'Photo', 'Production'];
-  let gridHtml = '<div style="display:grid;grid-template-columns:100px repeat(7,1fr);gap:8px;margin-bottom:20px;">';
-
-  // Header row with days
-  gridHtml += '<div style="font-weight:600;font-size:0.85rem;padding-right:8px;"></div>';
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(weekStart.getTime() + i * 86400000);
-    const dayName = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
-    const dateStr = d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
-    gridHtml += `<div style="text-align:center;font-size:0.8rem;color:var(--muted);padding:8px 4px;">${dayName}<br/>${dateStr}</div>`;
-  }
-
-  // Studio rows
-  studios.forEach(studio => {
-    gridHtml += `<div style="font-weight:600;font-size:0.9rem;padding-right:8px;display:flex;align-items:center;">${studio}</div>`;
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(weekStart.getTime() + i * 86400000);
-      const dateStr = d.toISOString().split('T')[0];
-      const dayBookings = (studioData || []).filter(b => b.booking_date === dateStr && b.studio_name && b.studio_name.includes(studio));
-
-      const cellHtml = dayBookings.length > 0
-        ? dayBookings.map(b => `
-          <div style="font-size:0.7rem;margin-bottom:2px;padding:2px 4px;background:rgba(255,77,77,0.2);border-radius:3px;">
-            <strong>${b.time_slot}</strong><br/>${b.user_name}
-          </div>`).join('')
-        : '<div style="color:var(--muted);font-size:0.7rem;">Free</div>';
-
-      gridHtml += `<div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px;font-size:0.75rem;min-height:80px;overflow-y:auto;">${cellHtml}</div>`;
+  // Group by date
+  const byDate = {};
+  (studioData || []).forEach(b => {
+    if (!byDate[b.booking_date]) byDate[b.booking_date] = [];
+    byDate[b.booking_date].push({ ...b, _t: 'studio' });
+  });
+  (gearData || []).forEach(b => {
+    let d = new Date(b.checkout_date + 'T12:00:00');
+    const end = new Date(b.return_date + 'T12:00:00');
+    while (d <= end) {
+      const ds = d.toISOString().split('T')[0];
+      if (ds >= monthStart && ds <= monthEnd) {
+        if (!byDate[ds]) byDate[ds] = [];
+        byDate[ds].push({ ...b, _t: 'gear' });
+      }
+      d.setDate(d.getDate() + 1);
     }
   });
 
-  gridHtml += '</div>';
-  document.getElementById('admin-calendar-grid').innerHTML = gridHtml;
+  window._calByDate = byDate;
+  renderAdminMonthGrid(year, month, byDate);
+}
 
-  // Render gear reservations
-  const gearHtml = (gearData || []).length === 0
-    ? '<p style="color:var(--muted);font-size:0.85rem;">No gear reservations this week.</p>'
-    : (gearData || []).map(b => `
-      <div class="admin-booking-card">
-        <div style="display:flex;justify-content:space-between;">
-          <div>
-            <h3 style="font-size:0.95rem;margin-bottom:4px;">${b.item_name}</h3>
-            <p style="color:var(--muted);font-size:0.82rem;">${formatDate(b.checkout_date)} → ${formatDate(b.return_date)}</p>
-          </div>
-          <div style="text-align:right;">
-            <span class="status ${b.status}">${b.status}</span>
-            <p style="color:var(--muted);font-size:0.85rem;margin-top:4px;">${b.user_name}</p>
-          </div>
-        </div>
-      </div>`).join('');
-  document.getElementById('admin-gear-reservations').innerHTML = gearHtml;
+function renderAdminMonthGrid(year, month, byDate) {
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date().toISOString().split('T')[0];
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  let html = '<div class="admin-month-grid">';
+  html += dayNames.map(d => `<div class="admin-month-header">${d}</div>`).join('');
+  for (let i = 0; i < firstDay; i++) html += '<div class="admin-month-day amd-empty"></div>';
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const bookings = byDate[ds] || [];
+    let cls = 'admin-month-day';
+    if (ds === today) cls += ' amd-today';
+    if (state.adminCalSelected === ds) cls += ' amd-selected';
+    const dots = bookings.slice(0, 5).map(b => `<span class="amd-dot ${b.status}"></span>`).join('');
+    const extra = bookings.length > 5 ? `<span style="font-size:0.62rem;color:var(--muted);">+${bookings.length - 5}</span>` : '';
+    const count = bookings.length > 0 ? `<div style="font-size:0.62rem;color:var(--muted);margin-top:3px;">${bookings.length} booking${bookings.length !== 1 ? 's' : ''}</div>` : '';
+    html += `<div class="${cls}" onclick="selectAdminCalDay('${ds}')"><div class="amd-num">${d}</div><div>${dots}${extra}</div>${count}</div>`;
+  }
+  html += '</div>';
+  document.getElementById('admin-month-grid-container').innerHTML = html;
+
+  const detailEl = document.getElementById('admin-cal-day-detail');
+  if (state.adminCalSelected) {
+    renderAdminDayDetail(state.adminCalSelected, byDate[state.adminCalSelected] || []);
+  } else {
+    detailEl.innerHTML = '';
+  }
+}
+
+function selectAdminCalDay(ds) {
+  state.adminCalSelected = state.adminCalSelected === ds ? null : ds;
+  renderAdminMonthGrid(state.adminCalYear, state.adminCalMonth, window._calByDate || {});
+}
+
+function renderAdminDayDetail(ds, bookings) {
+  const el = document.getElementById('admin-cal-day-detail');
+  if (!bookings.length) {
+    el.innerHTML = `<div class="day-detail"><div class="day-detail-heading">${formatDate(ds)}</div><p style="color:var(--muted);font-size:0.85rem;">No bookings on this day.</p></div>`;
+    return;
+  }
+  const items = bookings.map(b => {
+    const isStudio = b._t === 'studio';
+    const title = isStudio ? `${b.studio_name} — ${b.time_slot}` : b.item_name;
+    const time = isStudio ? SLOTS[b.time_slot]?.time || '' : `Checkout ${formatDate(b.checkout_date)} → Return ${formatDate(b.return_date)}`;
+    return `<div class="day-detail-item">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+        <div><span style="font-weight:600;">${title}</span><span class="status ${b.status}" style="margin-left:8px;">${b.status}</span></div>
+        <div style="text-align:right;font-size:0.78rem;color:var(--muted);flex-shrink:0;">${b.user_name || '—'}<br/>${b.user_email || ''}</div>
+      </div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:3px;">${time}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML = `<div class="day-detail"><div class="day-detail-heading">${formatDate(ds)} — ${bookings.length} booking${bookings.length !== 1 ? 's' : ''}</div>${items}</div>`;
+}
+
+function adminCalPrev() {
+  state.adminCalMonth--;
+  if (state.adminCalMonth < 0) { state.adminCalMonth = 11; state.adminCalYear--; }
+  state.adminCalSelected = null;
+  loadAdminCalendar();
+}
+
+function adminCalNext() {
+  state.adminCalMonth++;
+  if (state.adminCalMonth > 11) { state.adminCalMonth = 0; state.adminCalYear++; }
+  state.adminCalSelected = null;
+  loadAdminCalendar();
 }
 
 function prevWeek() {
@@ -1601,6 +1796,147 @@ function generateInvoice(id) {
 }
 
 // ──────────────────────────────────────────
+// ANALYTICS
+// ──────────────────────────────────────────
+async function loadAdminAnalytics() {
+  const [{ data: studios }, { data: gear }] = await Promise.all([
+    supabase.from('studio_bookings').select('*').neq('status', 'cancelled'),
+    supabase.from('gear_reservations').select('*').neq('status', 'cancelled'),
+  ]);
+  const all = [...(studios || []).map(b => ({ ...b, _t: 'studio' })), ...(gear || []).map(b => ({ ...b, _t: 'gear' }))];
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+  const totalRevenue = all.reduce((s, b) => s + parseFloat(b.total_price || 0), 0);
+  const monthRevenue = all.filter(b => b.created_at >= monthStart).reduce((s, b) => s + parseFloat(b.total_price || 0), 0);
+  document.getElementById('analytics-total-revenue').textContent = '$' + totalRevenue.toFixed(2);
+  document.getElementById('analytics-month-revenue').textContent = '$' + monthRevenue.toFixed(2);
+
+  const studentCount = all.filter(b => b.is_student).length;
+  const guestCount = all.filter(b => !b.is_student).length;
+  document.getElementById('analytics-student-count').textContent = studentCount;
+  document.getElementById('analytics-guest-count').textContent = guestCount;
+
+  // Bookings by studio
+  const studioCount = {};
+  (studios || []).forEach(b => { studioCount[b.studio_name] = (studioCount[b.studio_name] || 0) + 1; });
+  const maxStudio = Math.max(...Object.values(studioCount), 1);
+  document.getElementById('analytics-studio-bars').innerHTML = Object.entries(studioCount)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, count]) => `
+    <div class="analytics-bar-row">
+      <div class="analytics-bar-label" title="${name}">${name}</div>
+      <div class="analytics-bar-track"><div class="analytics-bar-fill" style="width:${Math.round(count / maxStudio * 100)}%"></div></div>
+      <div class="analytics-bar-value">${count}</div>
+    </div>`).join('') || '<p style="color:var(--muted);font-size:0.85rem;">No studio bookings yet.</p>';
+
+  // Booking types
+  const studioTotal = (studios || []).length;
+  const gearTotal = (gear || []).length;
+  const grandTotal = studioTotal + gearTotal || 1;
+  document.getElementById('analytics-type-studio-pct').style.width = `${Math.round(studioTotal / grandTotal * 100)}%`;
+  document.getElementById('analytics-type-gear-pct').style.width = `${Math.round(gearTotal / grandTotal * 100)}%`;
+  document.getElementById('analytics-type-studio-label').textContent = `Studio Bookings (${studioTotal})`;
+  document.getElementById('analytics-type-gear-label').textContent = `Gear Reservations (${gearTotal})`;
+
+  // Last 7 days bar chart
+  const last7 = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const ds = d.toISOString().split('T')[0];
+    last7.push({ label: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()], count: all.filter(b => (b.created_at || '').startsWith(ds)).length });
+  }
+  const maxCount = Math.max(...last7.map(d => d.count), 1);
+  document.getElementById('analytics-trend').innerHTML = `<div style="display:flex;gap:6px;align-items:flex-end;height:72px;">
+    ${last7.map(d => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+      <div style="flex:1;display:flex;align-items:flex-end;width:100%;">
+        <div style="width:100%;background:var(--accent);border-radius:3px 3px 0 0;opacity:0.85;height:${Math.max(3, Math.round(d.count / maxCount * 52))}px;" title="${d.count} bookings"></div>
+      </div>
+      <div style="font-size:0.62rem;color:var(--muted);">${d.label}</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+// ──────────────────────────────────────────
+// EXPORT CSV
+// ──────────────────────────────────────────
+function exportBookingsCSV() {
+  const items = Object.values(window._adminBookings || {});
+  if (!items.length) { showToast('No bookings loaded. Open the Bookings tab first.', 'error'); return; }
+  const headers = ['Type', 'Name/Studio', 'User', 'Email', 'Date', 'Slot/Checkout', 'Return', 'Status', 'Price', 'Student'];
+  const rows = items.map(b => {
+    const isStudio = b._t === 'studio';
+    return [
+      isStudio ? 'Studio' : b.item_type === 'kit' ? 'Kit' : 'Gear',
+      isStudio ? `${b.studio_name} ${b.time_slot}` : b.item_name,
+      b.user_name || '', b.user_email || '',
+      isStudio ? b.booking_date : b.checkout_date,
+      isStudio ? SLOTS[b.time_slot]?.time || b.time_slot : b.checkout_date,
+      isStudio ? '' : b.return_date,
+      b.status, b.total_price || 0, b.is_student ? 'Yes' : 'No'
+    ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
+  });
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `ibu-bookings-${new Date().toISOString().split('T')[0]}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV exported!', 'success');
+}
+
+// ──────────────────────────────────────────
+// BATCH OPERATIONS
+// ──────────────────────────────────────────
+function updateBatchBar() {
+  const checked = document.querySelectorAll('.batch-checkbox:checked');
+  const bar = document.getElementById('batch-bar');
+  const countEl = document.getElementById('batch-count');
+  if (checked.length > 0) {
+    bar.classList.add('visible');
+    countEl.textContent = checked.length;
+  } else {
+    bar.classList.remove('visible');
+  }
+}
+
+function clearBatchSelect() {
+  document.querySelectorAll('.batch-checkbox:checked').forEach(c => { c.checked = false; });
+  updateBatchBar();
+}
+
+async function batchApprove() {
+  const checked = Array.from(document.querySelectorAll('.batch-checkbox:checked'));
+  if (!checked.length) return;
+  const ids = checked.map(c => c.dataset.id);
+  for (const id of ids) {
+    const b = window._adminBookings[id];
+    if (!b || b.status !== 'pending') continue;
+    const table = b._t === 'studio' ? 'studio_bookings' : 'gear_reservations';
+    await supabase.from(table).update({ status: 'confirmed', updated_at: new Date().toISOString() }).eq('id', id);
+    sendApprovalEmail(b, b._t);
+  }
+  showToast(`✅ ${ids.length} booking${ids.length !== 1 ? 's' : ''} approved!`, 'success');
+  await loadAdminBookings();
+}
+
+async function batchReject() {
+  const checked = Array.from(document.querySelectorAll('.batch-checkbox:checked'));
+  if (!checked.length) return;
+  const ids = checked.map(c => c.dataset.id);
+  if (!confirm(`Reject ${ids.length} booking${ids.length !== 1 ? 's' : ''}?`)) return;
+  for (const id of ids) {
+    const b = window._adminBookings[id];
+    if (!b || b.status !== 'pending') continue;
+    const table = b._t === 'studio' ? 'studio_bookings' : 'gear_reservations';
+    await supabase.from(table).update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('id', id);
+    sendRejectionEmail(b, '');
+  }
+  showToast(`❌ ${ids.length} booking${ids.length !== 1 ? 's' : ''} rejected.`, 'success');
+  await loadAdminBookings();
+}
+
+// ──────────────────────────────────────────
 // UTILITIES
 // ──────────────────────────────────────────
 function formatDate(dateStr) {
@@ -1670,6 +2006,15 @@ window.filterAdminUsers   = filterAdminUsers;
 window.addToMyCalendar    = addToMyCalendar;
 window.showToast          = showToast;
 window.loadAdminBookings  = loadAdminBookings;
+window.loadAdminAnalytics = loadAdminAnalytics;
+window.exportBookingsCSV  = exportBookingsCSV;
+window.updateBatchBar     = updateBatchBar;
+window.clearBatchSelect   = clearBatchSelect;
+window.batchApprove       = batchApprove;
+window.batchReject        = batchReject;
+window.adminCalPrev       = adminCalPrev;
+window.adminCalNext       = adminCalNext;
+window.selectAdminCalDay  = selectAdminCalDay;
 
 // START
 init();
